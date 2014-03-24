@@ -15,13 +15,15 @@ message-broker
 3. Login
 
 ## Herausforderungen im Bezug auf Concurrency (nicht vollständig, eher spontan):
+
 Es gibt vier Aktoren auf dem Server/Broker:
-    1. Socket Listener: Wartet auf Verbindungen von einem Publisher oder Subscriber und erstellt einen neuen Worker Prozess zum abhandlen des Requests.
-    2. Worker: Interpretiert die Kommandos vom Publisher oder Subscriber und erstellt Topics (falls nötig), fügt Nachrichten ein und registriert Subscriber.
-        * Concurrency: Zwei Worker wollen gleichzeitig den gleichen Topic erstellen --> Speicherbereich muss in einem konsistenten Zustand gehalten werden
-        * Concurrency: Es gibt eine globale Liste von Subscribern die von Workern gefüllt werden und vom Garbage Collector abgeräumt wird. --> Speicherbereich muss synchronisiert werden da 1-n Prozesse schreibend drauf zugreifen (Worker) und der Garbage Collector lesend drauf zugreift.
-    3. Distributor: Verteilt die Nachrichten an die Subscriber. Für jede Nachricht werden Statisktiken gehalten, um zu bestimmen, an welche Subscriber die Nachricht bereits zugestellt wurde und falls nicht, wieviel mal es fehlgeschlagen hat und um welche Zeit der letzte Versuch war.
-        * Concurrency: Der Speicherbereich, indem die Statisktiken gehalten werden, wird auch vom Garbage Collector (GC) verwendet, um zu entscheiden, ob die Nachricht abgeräumt werden kann. Der Distributor weiss nicht, ob er noch einmal versuchen soll, die Nachricht zuzustellen oder ob sie gerade vom GC abgeräumt werden soll. Der Statisktik-Bereich muss konsistent gehalten werden, sodass der GC korrekt entscheiden kann, ob die Nachricht abgeräumt werden kann. --> Synchronisation notwendig.
-    4. Garbage Collector (GC): Prüft periodisch die Nachrichten in jeder Queue. Falls eine Nachricht an alle Subscriber erfolgreich zugestellt werden konnte, wird diese gelöscht. Wenn eine Nachricht schon genügend oft erfolglos zugestellt wurde, wird der Subscriber, an den die Nachricht nicht zugestellt werden konnte, gelöscht.
-        * Concurrency: Der GC bestimmt, ob eine Nachricht abgeräumt werden kann (siehe 3i).
-        * Concurrency: Der GC bestimmt, ob ein Subscriber abgeräumt wird (siehe 2ii).
+
+1. Socket Listener: Wartet auf Verbindungen von einem Publisher oder Subscriber und erstellt einen neuen Worker Prozess zum abhandlen des Requests.
+2. Worker: Interpretiert die Kommandos vom Publisher oder Subscriber und erstellt Topics (falls nötig), fügt Nachrichten ein und registriert Subscriber.
+   * Concurrency: Zwei Worker wollen gleichzeitig den gleichen Topic erstellen --> Speicherbereich muss in einem konsistenten Zustand gehalten werden
+   * Concurrency: Es gibt eine globale Liste von Subscribern die von Workern gefüllt werden und vom Garbage Collector abgeräumt wird. --> Speicherbereich muss synchronisiert werden da 1-n Prozesse schreibend drauf zugreifen (Worker) und der Garbage Collector lesend drauf zugreift.
+3. Distributor: Verteilt die Nachrichten an die Subscriber. Für jede Nachricht werden Statisktiken gehalten, um zu bestimmen, an welche Subscriber die Nachricht bereits zugestellt wurde und falls nicht, wieviel mal es fehlgeschlagen hat und um welche Zeit der letzte Versuch war.
+   * Concurrency: Der Speicherbereich, indem die Statisktiken gehalten werden, wird auch vom Garbage Collector (GC) verwendet, um zu entscheiden, ob die Nachricht abgeräumt werden kann. Der Distributor weiss nicht, ob er noch einmal versuchen soll, die Nachricht zuzustellen oder ob sie gerade vom GC abgeräumt werden soll. Der Statisktik-Bereich muss konsistent gehalten werden, sodass der GC korrekt entscheiden kann, ob die Nachricht abgeräumt werden kann. --> Synchronisation notwendig.
+4. Garbage Collector (GC): Prüft periodisch die Nachrichten in jeder Queue. Falls eine Nachricht an alle Subscriber erfolgreich zugestellt werden konnte, wird diese gelöscht. Wenn eine Nachricht schon genügend oft erfolglos zugestellt wurde, wird der Subscriber, an den die Nachricht nicht zugestellt werden konnte, gelöscht.
+   * Concurrency: Der GC bestimmt, ob eine Nachricht abgeräumt werden kann (siehe 3i).
+   * Concurrency: Der GC bestimmt, ob ein Subscriber abgeräumt wird (siehe 2ii).
