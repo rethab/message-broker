@@ -63,13 +63,20 @@
  *    c. No Content
  *    d. Response from broker
  *       i. ERROR if subscription cannot be created
- * 6. DISCONNECT
+ * 6. MESSAGE
+ *    a. Message sent to a subscriber of a topic
+ *    b. Headers
+ *       i.  message-id: an integer identifying the message
+ *       ii. destination: a string identifying the topic
+ *           this message was sent to
+ *    c. Content: The contents of the message
+ * 7. DISCONNECT
  *    a. Sent by a connected client to end a connection
  *    b. No Headers
  *    c. No Content
  *    d. Response from broker
  *       i. RECEIPT to confirm
- * 7. RECEIPT
+ * 8. RECEIPT
  *    a. Sent by the broker to a client as confirmation that
  *       the connection has been successfully ended.
  *    b. No Headers
