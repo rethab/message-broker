@@ -102,3 +102,5 @@ struct stomp_command {
 };
 
 int parse_command(char*, struct stomp_command*);
+
+int create_command(struct stomp_command, char*);
