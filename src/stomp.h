@@ -26,6 +26,7 @@
  *    key: value
  *    key: value
  *    ..
+ *
  *    Content
  *
  *    ^@
@@ -83,3 +84,19 @@
  *    c. No Content
  *
  */
+
+#define STOMP_MISSING_HEADER -1
+#define STOMP_INVALID_HEADER -2
+#define STOMP_UNEXPECTED_BODY -3
+
+struct stomp_header {
+    char* key,
+    char* value;
+};
+
+struct stomp_command {
+    char*                name,
+    struct stomp_header* headers,
+    int                  nheaders,
+    char*                content;
+};
