@@ -4,6 +4,7 @@
 #include <assert.h>
 
 #include <CUnit/CUnit.h>
+#include <CUnit/Basic.h>
 
 #include "../src/stomp.h"
 
@@ -173,6 +174,8 @@ void test_create_command_receipt() {
 // returns a frame ready to sent to a client
 
 int main(int argc, char** argv) {
+    assert(CUE_SUCCESS == CU_initialize_registry());
+
     CU_pSuite parseSuite = CU_add_suite("stomp_parse", NULL, NULL);
     CU_add_test(parseSuite, "test_parse_command_connect",
         test_parse_command_connect);
@@ -192,8 +195,9 @@ int main(int argc, char** argv) {
         test_create_command_message);
     CU_add_test(createSuite, "test_create_command_receipt",
         test_create_command_receipt);
+    
+    CU_basic_run_tests();
 
-    CU_basic_run_suite(parseSuite);
-    CU_basic_run_suite(createSuite);
+    CU_cleanup_registry();
     exit(EXIT_SUCCESS);
 }
