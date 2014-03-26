@@ -1,5 +1,12 @@
+CFLAGS=-Isrc -std=c99 -D_XOPEN_SOURCE=700
+TEST_CFLAGS=-Itest -lcunit
+
 test: stomp-test.o
 	test/stomp-test.o
 
 stomp-test.o:
-	gcc -Isrc -Itest -lcunit -o test/stomp-test.o test/stomp-test.c src/stomp.c
+	gcc $(CFLAGS) $(TEST_CFLAGS) -o test/stomp-test.o test/stomp-test.c src/stomp.c
+
+
+clean:
+	rm test/stomp-test.o
