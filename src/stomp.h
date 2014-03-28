@@ -88,10 +88,11 @@
 #define STOMP_MISSING_HEADER  -1
 #define STOMP_INVALID_HEADER  -2
 #define STOMP_UNEXPECTED_BODY -3
+#define STOMP_UNKNOWN_COMMAND -4
 
 struct stomp_header {
     char* key;
-    char* value;
+    char* val;
 };
 
 struct stomp_command {
