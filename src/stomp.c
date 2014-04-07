@@ -1,7 +1,20 @@
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "stomp.h"
+
+/* trims a string on boths sides */
+static void trim(char **str) {
+    int i;
+
+    // drop from left
+    while (**str == ' ') (*str)++;
+
+    i = strlen(*str) - 1;
+    // move 0 on the to the left
+    while (i > 0 && (*str)[i] == ' ') (*str)[i--] = '\0';
+}
 
 /*
  * parses header key value pairs from the
@@ -19,56 +32,71 @@
  * the return code is 0 on success or any of the
  * STOMP_ error codes on failure.
  */
-static int parse_header(char* raw, size_t expected,
-                        struct stomp_header** headers) {
-    int i = 0;
-    char* line;
-    char* saferaw;
-    line = strtok_r(raw, "\n", &saferaw);
-    if (line == NULL) return STOMP_MISSING_HEADER;
+static int parse_header(char *raw, size_t expected,
+                        struct stomp_header **headers) {
+    char *saveraw;
+    size_t i = 0;
+    char *rawline;
+    char *saveline;
+    rawline = strtok_r(raw, "\n", &saveraw);
+    if (rawline == NULL) return STOMP_MISSING_HEADER;
     // at most expected, unless end or empty
-    while (i < expected && line != NULL && strnlen(line, 1) != 0) {
-        char *key = strtok_r(line, ":", &line);
+    while (i < expected && rawline != NULL && strnlen(rawline, 1) != 0) {
+        char *line = strdup(rawline); // MALLOC
+
+        // key
+        char *key = strtok_r(line, ":", &saveline);
         if (key == NULL) return STOMP_INVALID_HEADER;
-        char *val = strtok_r(NULL, ":", &line);
+        trim(&key);
+        if (strlen(key) == 0) return STOMP_INVALID_HEADER;
+
+        // val
+        char *val = strtok_r(NULL, ":", &saveline);
         if (val == NULL) return STOMP_INVALID_HEADER;
-        if (strtok_r(NULL, ":", &line) != NULL)
+        trim(&val);
+        if (strlen(val) == 0) return STOMP_INVALID_HEADER;
+
+        // more?
+        if (strtok_r(NULL, ":", &saveline) != NULL)
             return STOMP_INVALID_HEADER;
-        
+
+
         headers[i]->key = key;
         headers[i]->val = val;
 
-        line = strtok_r(NULL, "\n", &raw);
+        printf("Header: %s=%s\n", key, val);
+
+        rawline = strtok_r(NULL, "\n", &saveraw);
         i++;
     }
 
     if (i < (expected-1)) {
         return STOMP_MISSING_HEADER;   
-    } else if (strnlen(line, 1) != 0) {
-        return STOMP_INVALID_HEADER;   
+    } else if (rawline != NULL) {
+        return STOMP_INVALID_HEADER;
     } else {
         return 0;
     }
 }
 
-static int parse_content(char* raw, size_t expected, char** content) {
+static int parse_content(const char *raw, size_t expected,
+                    char **content) {
     return -1;
 }
 
-static int parse_command_connect(char* raw, struct stomp_command* cmd) {
+static int parse_command_connect(char *rawheader,
+                const char *rawcontent, struct stomp_command* cmd) {
     // parse header 'login'
     int nheaders = 1;
     struct stomp_header* headers =
             malloc(sizeof(struct stomp_header) * nheaders);
-    int parsed = parse_header(raw, nheaders, &headers);
-    if (parsed != 0) {
-        return parsed;   
-    }
-
-    // expect no content
-    parsed = parse_content(raw, 0, NULL);
+    int parsed = parse_header(rawheader, nheaders, &headers);
     if (parsed != 0) {
         return parsed;
+    }
+
+    if (rawcontent != NULL) {
+        return STOMP_UNEXPECTED_CONTENT;
     }
 
     cmd->name = "CONNECT";
@@ -77,9 +105,38 @@ static int parse_command_connect(char* raw, struct stomp_command* cmd) {
     return 0;
 }
 
+static int split_cmd(char *raw, char **header, char **content) {
+    char *headerend, *contentend;
+
+    // search for header/content separator
+    headerend = strstr(raw, "\n\n"); 
+    if (headerend == NULL) return STOMP_MISSING_HEADER;
+
+    // mark end of string for header at newline
+    *headerend = '\0';
+    *header = raw;
+
+    contentend = strstr(headerend+2, "\n\n");
+    // content is optional
+    if (contentend != NULL) {
+        // end content
+        *(contentend-2) = '\0';
+        *content = headerend+2;
+    } else {
+        *content = NULL;    
+    }
+
+    return 0;
+}
+
 int parse_command(char* raw, struct stomp_command* cmd) {
+    char *header, *content;
+    int split;
+
     if (strncmp("CONNECT\n", raw, 8) == 0) {
-        return parse_command_connect(raw+8, cmd);
+        split = split_cmd(raw+8, &header, &content);
+        if (split != 0) return split;
+        return parse_command_connect(header, content, cmd);
     } else {
         return STOMP_UNKNOWN_COMMAND;
     }
