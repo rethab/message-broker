@@ -14,7 +14,7 @@ message-broker
 2. Transkationen
 3. Login
 
-## Herausforderungen im Bezug auf Concurrency (nicht vollständig, eher spontan):
+## Herausforderungen im Bezug auf Concurrency:
 
 Es gibt vier Aktoren auf dem Server/Broker:
 
