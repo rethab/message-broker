@@ -9,8 +9,8 @@
  *
  * *rough: While this implementation is very similar to the
  *         original STOMP specification, it does not adhere
- *         to it entirely. Some commands are not supported
- *         and some headers.
+ *         to it entirely. Some commands and some headers
+ *         are not supported.
  *
  * Terminology:
  * 1. Broker: The server that accepts connections from clients
@@ -85,10 +85,14 @@
  *
  */
 
-#define STOMP_MISSING_HEADER  -1
-#define STOMP_INVALID_HEADER  -2
-#define STOMP_UNEXPECTED_BODY -3
-#define STOMP_UNKNOWN_COMMAND -4
+#define STOMP_MISSING_HEADER     -2
+#define STOMP_INVALID_HEADER     -3
+#define STOMP_UNEXPECTED_CONTENT -4
+#define STOMP_MISSING_CONTENT    -5
+#define STOMP_INVALID_CONTENT    -6
+#define STOMP_UNKNOWN_COMMAND    -7
+
+#define STOMP_MAX_CONTENT 2048
 
 struct stomp_header {
     char* key;
