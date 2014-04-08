@@ -103,7 +103,7 @@ struct stomp_header {
 struct stomp_command {
     char*                name;
     struct stomp_header* headers;
-    int                  nheaders;
+    size_t               nheaders;
     char*                content;
 };
 
