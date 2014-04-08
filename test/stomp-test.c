@@ -29,6 +29,7 @@ void test_parse_command_connect() {
     CU_ASSERT_STRING_EQUAL_FATAL("CONNECT", cmd.name);
     CU_ASSERT_STRING_EQUAL_FATAL("login", cmd.headers->key);
     CU_ASSERT_STRING_EQUAL_FATAL("client-1", cmd.headers->val);
+    CU_ASSERT_EQUAL_FATAL(1, cmd.nheaders);
     CU_ASSERT_PTR_NULL_FATAL(cmd.content);
     
     // regular command with whitespaces in header
@@ -38,6 +39,7 @@ void test_parse_command_connect() {
     CU_ASSERT_STRING_EQUAL_FATAL("CONNECT", cmd.name);
     CU_ASSERT_STRING_EQUAL_FATAL("login", cmd.headers->key);
     CU_ASSERT_STRING_EQUAL_FATAL("client-1", cmd.headers->val);
+    CU_ASSERT_EQUAL_FATAL(1, cmd.nheaders);
     CU_ASSERT_PTR_NULL_FATAL(cmd.content);
 
     // missing login header
@@ -66,6 +68,7 @@ void test_parse_command_send() {
     CU_ASSERT_STRING_EQUAL_FATAL("SEND", cmd.name);
     CU_ASSERT_STRING_EQUAL_FATAL("topic", cmd.headers->key);
     CU_ASSERT_STRING_EQUAL_FATAL("stocks", cmd.headers->val);
+    CU_ASSERT_EQUAL_FATAL(1, cmd.nheaders);
     CU_ASSERT_STRING_EQUAL_FATAL("new price: 33.4", cmd.content);
  
     // multiline regular command
@@ -76,6 +79,7 @@ void test_parse_command_send() {
     CU_ASSERT_STRING_EQUAL_FATAL("SEND", cmd.name);
     CU_ASSERT_STRING_EQUAL_FATAL("topic", cmd.headers->key);
     CU_ASSERT_STRING_EQUAL_FATAL("stocks", cmd.headers->val);
+    CU_ASSERT_EQUAL_FATAL(1, cmd.nheaders);
     CU_ASSERT_STRING_EQUAL_FATAL("o p: 23.4\nn p: 33.4", cmd.content);
 
     // missing topic header
@@ -103,6 +107,7 @@ void test_parse_command_subscribe() {
     CU_ASSERT_STRING_EQUAL_FATAL("SUBSCRIBE", cmd.name);
     CU_ASSERT_STRING_EQUAL_FATAL("destination", cmd.headers->key);
     CU_ASSERT_STRING_EQUAL_FATAL("stocks", cmd.headers->val);
+    CU_ASSERT_EQUAL_FATAL(1, cmd.nheaders);
     CU_ASSERT_PTR_NULL_FATAL(cmd.content);
  
     // missing topic header
@@ -131,6 +136,7 @@ void test_parse_command_disconnect() {
     // regular command
     char str1[] = "DISCONNECT";
     CU_ASSERT_EQUAL_FATAL(0, parse_command(str1, &cmd));
+    CU_ASSERT_EQUAL_FATAL(0, cmd.nheaders);
 
     // invalid header (wants none)
     char str2[] = "DISCONNECT\nfoo: bar\n\n";
@@ -153,7 +159,7 @@ void test_create_command_connected() {
     cmd.content = NULL;
 
     char* str;
-    CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, str));
+    CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
     CU_ASSERT_STRING_EQUAL_FATAL("CONNECTED", str);
 }
 
@@ -168,7 +174,7 @@ void test_create_command_error() {
     cmd.content = NULL;
 
     char* str;
-    CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, str));
+    CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
     CU_ASSERT_STRING_EQUAL_FATAL("ERROR\nmesage:failed\n\n", str);
 }
 
@@ -181,7 +187,7 @@ void test_create_command_message() {
     cmd.content = "hello world";
 
     char* str;
-    CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, str));
+    CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
     CU_ASSERT_STRING_EQUAL_FATAL("MESSAGE\n\nhello world\n\n", str);
 
     // two lines
@@ -189,7 +195,7 @@ void test_create_command_message() {
     cmd.headers = NULL;
     cmd.content = "hello\n world";
 
-    CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, str));
+    CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
     CU_ASSERT_STRING_EQUAL_FATAL("MESSAGE\n\nhello\n world\n\n", str);
 }
 
@@ -201,7 +207,7 @@ void test_create_command_receipt() {
     cmd.content = NULL;
 
     char* str;
-    CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, str));
+    CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
     CU_ASSERT_STRING_EQUAL_FATAL("RECEIPT\n\n", str);
 }
 
