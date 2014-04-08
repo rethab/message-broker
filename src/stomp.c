@@ -39,7 +39,8 @@ static int parse_header(char *raw, size_t expected,
     char *rawline;
     char *saveline;
     rawline = strtok_r(raw, "\n", &saveraw);
-    if (rawline == NULL) return STOMP_MISSING_HEADER;
+    if (rawline == NULL && expected != 0)
+        return STOMP_MISSING_HEADER;
     // at most expected, unless end or empty
     while (i < expected && rawline != NULL && strnlen(rawline, 1) != 0) {
         char *line = strdup(rawline); // MALLOC
@@ -89,20 +90,26 @@ static int split_cmd(char *raw, char **header, char **content) {
 
     // search for header/content separator
     headerend = strstr(raw, "\n\n"); 
-    if (headerend == NULL) return STOMP_MISSING_HEADER;
-
-    // mark end of string for header at newline
-    *headerend = '\0';
-    *header = raw;
-
-    contentend = strstr(headerend+2, "\n\n");
-    // content is optional
-    if (contentend != NULL) {
-        // end content
-        *contentend = '\0';
-        *content = headerend+2;
+    if (headerend == NULL) {
+        // no header found, later parsing
+        // will handle this
+        *header = NULL;
+        *content = NULL;
     } else {
-        *content = NULL;    
+
+        // mark end of string for header at newline
+        *headerend = '\0';
+        *header = raw;
+
+        contentend = strstr(headerend+2, "\n\n");
+        // content is optional
+        if (contentend != NULL) {
+            // end content
+            *contentend = '\0';
+            *content = headerend+2;
+        } else {
+            *content = NULL;    
+        }
     }
 
     return 0;
@@ -167,10 +174,20 @@ static int parse_command_subscribe(char *rawheader,
         return STOMP_UNEXPECTED_CONTENT;
     }
     
-    printf("Content: %s\n", rawcontent);
-
     cmd->name = "SUBSCRIBE";
     cmd->headers = headers;
+    cmd->content = NULL;
+    return 0;
+}
+
+static int parse_command_disconnect(char *rawheader,
+                const char *rawcontent, struct stomp_command* cmd) {
+    // expect no header
+    if (rawheader != NULL) return STOMP_UNEXPECTED_HEADER;
+    if (rawcontent != NULL) return STOMP_UNEXPECTED_CONTENT;
+    
+    cmd->name = "DISCONNECT";
+    cmd->headers = NULL;
     cmd->content = NULL;
     return 0;
 }
@@ -191,6 +208,10 @@ int parse_command(char* raw, struct stomp_command* cmd) {
         split = split_cmd(raw+10, &header, &content);
         if (split != 0) return split;
         return parse_command_subscribe(header, content, cmd);
+    } else if (strncmp("DISCONNECT\n", raw, 10) == 0) {
+        split = split_cmd(raw+10, &header, &content);
+        if (split != 0) return split;
+        return parse_command_disconnect(header, content, cmd);
     } else {
         return STOMP_UNKNOWN_COMMAND;
     }
