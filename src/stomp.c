@@ -152,6 +152,29 @@ static int parse_command_send(char *rawheader,
     return 0;
 }
 
+static int parse_command_subscribe(char *rawheader,
+                const char *rawcontent, struct stomp_command* cmd) {
+    // parse header 'destination'
+    int nheaders = 1;
+    struct stomp_header* headers =
+            malloc(sizeof(struct stomp_header) * nheaders);
+    int parsed = parse_header(rawheader, nheaders, &headers);
+    if (parsed != 0) {
+        return parsed;
+    }
+
+    if (rawcontent != NULL) {
+        return STOMP_UNEXPECTED_CONTENT;
+    }
+    
+    printf("Content: %s\n", rawcontent);
+
+    cmd->name = "SUBSCRIBE";
+    cmd->headers = headers;
+    cmd->content = NULL;
+    return 0;
+}
+
 int parse_command(char* raw, struct stomp_command* cmd) {
     char *header, *content;
     int split;
@@ -164,6 +187,10 @@ int parse_command(char* raw, struct stomp_command* cmd) {
         split = split_cmd(raw+5, &header, &content);
         if (split != 0) return split;
         return parse_command_send(header, content, cmd);
+    } else if (strncmp("SUBSCRIBE\n", raw, 10) == 0) {
+        split = split_cmd(raw+10, &header, &content);
+        if (split != 0) return split;
+        return parse_command_subscribe(header, content, cmd);
     } else {
         return STOMP_UNKNOWN_COMMAND;
     }
