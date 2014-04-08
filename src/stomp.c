@@ -84,6 +84,30 @@ static int parse_content(const char *raw, size_t expected,
     return -1;
 }
 
+static int split_cmd(char *raw, char **header, char **content) {
+    char *headerend, *contentend;
+
+    // search for header/content separator
+    headerend = strstr(raw, "\n\n"); 
+    if (headerend == NULL) return STOMP_MISSING_HEADER;
+
+    // mark end of string for header at newline
+    *headerend = '\0';
+    *header = raw;
+
+    contentend = strstr(headerend+2, "\n\n");
+    // content is optional
+    if (contentend != NULL) {
+        // end content
+        *contentend = '\0';
+        *content = headerend+2;
+    } else {
+        *content = NULL;    
+    }
+
+    return 0;
+}
+
 static int parse_command_connect(char *rawheader,
                 const char *rawcontent, struct stomp_command* cmd) {
     // parse header 'login'
@@ -105,27 +129,26 @@ static int parse_command_connect(char *rawheader,
     return 0;
 }
 
-static int split_cmd(char *raw, char **header, char **content) {
-    char *headerend, *contentend;
-
-    // search for header/content separator
-    headerend = strstr(raw, "\n\n"); 
-    if (headerend == NULL) return STOMP_MISSING_HEADER;
-
-    // mark end of string for header at newline
-    *headerend = '\0';
-    *header = raw;
-
-    contentend = strstr(headerend+2, "\n\n");
-    // content is optional
-    if (contentend != NULL) {
-        // end content
-        *(contentend-2) = '\0';
-        *content = headerend+2;
-    } else {
-        *content = NULL;    
+static int parse_command_send(char *rawheader,
+                const char *rawcontent, struct stomp_command* cmd) {
+    // parse header 'topic'
+    int nheaders = 1;
+    struct stomp_header* headers =
+            malloc(sizeof(struct stomp_header) * nheaders);
+    int parsed = parse_header(rawheader, nheaders, &headers);
+    if (parsed != 0) {
+        return parsed;
     }
 
+    if (rawcontent == NULL) {
+        return STOMP_MISSING_CONTENT;
+    }
+    
+    printf("Content: %s\n", rawcontent);
+
+    cmd->name = "SEND";
+    cmd->headers = headers;
+    cmd->content = strdup(rawcontent); // malloc
     return 0;
 }
 
@@ -137,6 +160,10 @@ int parse_command(char* raw, struct stomp_command* cmd) {
         split = split_cmd(raw+8, &header, &content);
         if (split != 0) return split;
         return parse_command_connect(header, content, cmd);
+    } else if (strncmp("SEND\n", raw, 5) == 0) {
+        split = split_cmd(raw+5, &header, &content);
+        if (split != 0) return split;
+        return parse_command_send(header, content, cmd);
     } else {
         return STOMP_UNKNOWN_COMMAND;
     }
