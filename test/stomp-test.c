@@ -157,6 +157,7 @@ void test_create_command_connected() {
     cmd.name = "CONNECTED";
     cmd.headers = NULL;
     cmd.content = NULL;
+    cmd.nheaders = 0;
 
     char* str;
     CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
@@ -172,6 +173,7 @@ void test_create_command_error() {
     cmd.name = "ERROR";
     cmd.headers = &msg;
     cmd.content = NULL;
+    cmd.nheaders = 1;
 
     char* str;
     CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
@@ -185,6 +187,7 @@ void test_create_command_message() {
     cmd.name = "MESSAGE";
     cmd.headers = NULL;
     cmd.content = "hello world";
+    cmd.nheaders = 0;
 
     char* str;
     CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
@@ -194,6 +197,7 @@ void test_create_command_message() {
     cmd.name = "MESSAGE";
     cmd.headers = NULL;
     cmd.content = "hello\n world";
+    cmd.nheaders = 0;
 
     CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
     CU_ASSERT_STRING_EQUAL_FATAL("MESSAGE\n\nhello\n world\n\n", str);
@@ -205,6 +209,7 @@ void test_create_command_receipt() {
     cmd.name = "RECEIPT";
     cmd.headers = NULL;
     cmd.content = NULL;
+    cmd.nheaders = 0;
 
     char* str;
     CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
