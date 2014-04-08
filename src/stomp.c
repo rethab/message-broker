@@ -133,6 +133,7 @@ static int parse_command_connect(char *rawheader,
     cmd->name = "CONNECT";
     cmd->headers = headers;
     cmd->content = NULL;
+    cmd->nheaders = nheaders;
     return 0;
 }
 
@@ -156,6 +157,7 @@ static int parse_command_send(char *rawheader,
     cmd->name = "SEND";
     cmd->headers = headers;
     cmd->content = strdup(rawcontent); // malloc
+    cmd->nheaders = nheaders;
     return 0;
 }
 
@@ -177,6 +179,7 @@ static int parse_command_subscribe(char *rawheader,
     cmd->name = "SUBSCRIBE";
     cmd->headers = headers;
     cmd->content = NULL;
+    cmd->nheaders = nheaders;
     return 0;
 }
 
@@ -189,6 +192,7 @@ static int parse_command_disconnect(char *rawheader,
     cmd->name = "DISCONNECT";
     cmd->headers = NULL;
     cmd->content = NULL;
+    cmd->nheaders = 0;
     return 0;
 }
 
@@ -217,6 +221,11 @@ int parse_command(char* raw, struct stomp_command* cmd) {
     }
 }
 
-int create_command(struct stomp_command cmd, char* str) {
-    return 0;
+int create_command(struct stomp_command cmd, char **str) {
+    if (strncmp(cmd.name, "CONNECTED", 9) == 0) {
+        *str = "CONNECTED"; 
+        return 0;
+    } else {
+        return STOMP_UNKNOWN_COMMAND;    
+    }
 }
