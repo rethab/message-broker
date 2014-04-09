@@ -217,7 +217,7 @@ int parse_command(char* raw, struct stomp_command* cmd) {
     }
 }
 
-static int create_command_error(struct stomp_command cmd,
+static int create_command_generic(struct stomp_command cmd,
         const char *cmdname, char **str) {
     int i;
     size_t len;
@@ -273,12 +273,13 @@ static int create_command_error(struct stomp_command cmd,
 }
 
 int create_command(struct stomp_command cmd, char **str) {
-    if (strncmp(cmd.name, "CONNECTED", 9) == 0) {
+    if (strcmp(cmd.name, "CONNECTED") == 0) {
         *str = "CONNECTED"; 
         return 0;
-    } else if (strncmp(cmd.name, "ERROR", 5) == 0) {
-        create_command_error(cmd, "ERROR", str);
-        return 0;
+    } else if (strcmp(cmd.name, "ERROR") == 0) {
+        return create_command_generic(cmd, cmd.name, str);
+    } else if (strcmp(cmd.name, "MESSAGE") == 0) {
+        return create_command_generic(cmd, cmd.name, str);
     } else {
         return STOMP_UNKNOWN_COMMAND;    
     }

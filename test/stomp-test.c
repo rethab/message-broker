@@ -192,7 +192,7 @@ void test_create_command_message() {
 
     char* str;
     CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
-    CU_ASSERT_STRING_EQUAL_FATAL("MESSAGE\n\nhello world\n\n", str);
+    CU_ASSERT_STRING_EQUAL_FATAL("MESSAGE\nhello world\n\n", str);
 
     // two lines
     cmd.name = "MESSAGE";
@@ -201,7 +201,7 @@ void test_create_command_message() {
     cmd.nheaders = 0;
 
     CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
-    CU_ASSERT_STRING_EQUAL_FATAL("MESSAGE\n\nhello\n world\n\n", str);
+    CU_ASSERT_STRING_EQUAL_FATAL("MESSAGE\nhello\n world\n\n", str);
 }
 
 void test_create_command_receipt() {
