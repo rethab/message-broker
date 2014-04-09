@@ -218,14 +218,14 @@ int parse_command(char* raw, struct stomp_command* cmd) {
 }
 
 static int create_command_generic(struct stomp_command cmd,
-        const char *cmdname, char **str) {
+        char **str) {
     int i;
     size_t len;
     char *dst;
 
     // length calc
     len = 0;
-    len += strlen(cmdname) + 1; // name\n
+    len += strlen(cmd.name) + 1; // name\n
     for (i = 0; i < cmd.nheaders; i++) {
         len += strlen(cmd.headers[i].key);
         len += 1; // :
@@ -236,6 +236,8 @@ static int create_command_generic(struct stomp_command cmd,
         len += strlen(cmd.content);
         len += 2; // \n\n
     }
+    if (cmd.nheaders == 0 && cmd.content == NULL)
+        len += 1; // another \n
     len += 1; // \0
 
     // memory for string
@@ -243,9 +245,9 @@ static int create_command_generic(struct stomp_command cmd,
 
     // string construction, always reset dst to beginning
     // of next token
-    dst = strcat(*str, cmdname);
+    dst = strcat(*str, cmd.name);
     dst = strcat(dst, "\n");
-    dst += strlen(cmdname + 1); // name\n
+    dst += strlen(cmd.name + 1); // name\n
     for (i = 0; i < cmd.nheaders; i++) {
         dst = strcat(dst, cmd.headers[i].key);
         dst += strlen(cmd.headers[i].key);
@@ -267,22 +269,22 @@ static int create_command_generic(struct stomp_command cmd,
         dst = strcat(dst, "\n\n");
         dst += 2;
     }
+    if (cmd.nheaders == 0 && cmd.content == NULL) {
+        dst = strcat(dst, "\n");    
+        dst += 1;
+    }
 
     dst = '\0';
     return 0;
 }
 
 int create_command(struct stomp_command cmd, char **str) {
-    if (strcmp(cmd.name, "CONNECTED") == 0) {
-        *str = "CONNECTED"; 
-        return 0;
-    } else if (strcmp(cmd.name, "ERROR") == 0) {
-        return create_command_generic(cmd, cmd.name, str);
-    } else if (strcmp(cmd.name, "MESSAGE") == 0) {
-        return create_command_generic(cmd, cmd.name, str);
-    } else if (strcmp(cmd.name, "RECEIPT") == 0) {
-        return create_command_generic(cmd, cmd.name, str);
+    if (strcmp(cmd.name, "CONNECTED") == 0
+     || strcmp(cmd.name, "ERROR") == 0
+     || strcmp(cmd.name, "MESSAGE") == 0
+     || strcmp(cmd.name, "RECEIPT") == 0) {
+        return create_command_generic(cmd, str);
     } else {
-        return STOMP_UNKNOWN_COMMAND;    
+        return STOMP_UNKNOWN_COMMAND;
     }
 }

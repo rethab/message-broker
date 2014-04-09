@@ -161,7 +161,7 @@ void test_create_command_connected() {
 
     char* str;
     CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
-    CU_ASSERT_STRING_EQUAL_FATAL("CONNECTED", str);
+    CU_ASSERT_STRING_EQUAL_FATAL("CONNECTED\n\n", str);
 }
 
 void test_create_command_error() {
@@ -177,7 +177,6 @@ void test_create_command_error() {
 
     char* str;
     CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
-    printf("String='%s'\n", str);
     CU_ASSERT_STRING_EQUAL_FATAL("ERROR\nmessage:fail\n\n", str);
 }
 
@@ -214,7 +213,7 @@ void test_create_command_receipt() {
 
     char* str;
     CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
-    CU_ASSERT_STRING_EQUAL_FATAL("RECEIPT\n", str);
+    CU_ASSERT_STRING_EQUAL_FATAL("RECEIPT\n\n", str);
 }
 
 
