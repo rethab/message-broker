@@ -161,31 +161,6 @@ static int parse_command_disconnect(char *rawheader,
         rawcontent, 0, 0, cmd);
 }
 
-int parse_command(char* raw, struct stomp_command* cmd) {
-    char *header, *content;
-    int split;
-
-    if (strncmp("CONNECT\n", raw, 8) == 0) {
-        split = split_cmd(raw+8, &header, &content);
-        if (split != 0) return split;
-        return parse_command_connect(header, content, cmd);
-    } else if (strncmp("SEND\n", raw, 5) == 0) {
-        split = split_cmd(raw+5, &header, &content);
-        if (split != 0) return split;
-        return parse_command_send(header, content, cmd);
-    } else if (strncmp("SUBSCRIBE\n", raw, 10) == 0) {
-        split = split_cmd(raw+10, &header, &content);
-        if (split != 0) return split;
-        return parse_command_subscribe(header, content, cmd);
-    } else if (strncmp("DISCONNECT\n", raw, 10) == 0) {
-        split = split_cmd(raw+10, &header, &content);
-        if (split != 0) return split;
-        return parse_command_disconnect(header, content, cmd);
-    } else {
-        return STOMP_UNKNOWN_COMMAND;
-    }
-}
-
 static int create_command_generic(struct stomp_command cmd,
         char **str) {
     int i;
@@ -246,6 +221,32 @@ static int create_command_generic(struct stomp_command cmd,
     dst = '\0';
     return 0;
 }
+
+int parse_command(char* raw, struct stomp_command* cmd) {
+    char *header, *content;
+    int split;
+
+    if (strncmp("CONNECT\n", raw, 8) == 0) {
+        split = split_cmd(raw+8, &header, &content);
+        if (split != 0) return split;
+        return parse_command_connect(header, content, cmd);
+    } else if (strncmp("SEND\n", raw, 5) == 0) {
+        split = split_cmd(raw+5, &header, &content);
+        if (split != 0) return split;
+        return parse_command_send(header, content, cmd);
+    } else if (strncmp("SUBSCRIBE\n", raw, 10) == 0) {
+        split = split_cmd(raw+10, &header, &content);
+        if (split != 0) return split;
+        return parse_command_subscribe(header, content, cmd);
+    } else if (strncmp("DISCONNECT\n", raw, 10) == 0) {
+        split = split_cmd(raw+10, &header, &content);
+        if (split != 0) return split;
+        return parse_command_disconnect(header, content, cmd);
+    } else {
+        return STOMP_UNKNOWN_COMMAND;
+    }
+}
+
 
 int create_command(struct stomp_command cmd, char **str) {
     if (strcmp(cmd.name, "CONNECTED") == 0
