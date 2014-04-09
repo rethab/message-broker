@@ -221,9 +221,64 @@ int parse_command(char* raw, struct stomp_command* cmd) {
     }
 }
 
+static int create_command_error(struct stomp_command cmd, char **str) {
+    int i;
+    size_t len;
+    char *dst;
+
+    // length calc
+    len = 6; // error\n
+    for (i = 0; i < cmd.nheaders; i++) {
+        len += strlen(cmd.headers[i].key);
+        len += 1; // :
+        len += strlen(cmd.headers[i].val);
+    }
+    if (cmd.nheaders != 0) len += 2; // \n\n
+    if (cmd.content != NULL) {
+        len += strlen(cmd.content);
+        len += 2; // \n\n
+    }
+    len += 1; // \0
+
+    // memory for string
+    *str = malloc(sizeof(char *) * len ); // MALLOC
+
+    // string construction, always reset dst to beginning
+    // of next token
+    dst = strcat(*str, "ERROR\n");
+    dst += 6;
+    for (i = 0; i < cmd.nheaders; i++) {
+        dst = strcat(dst, cmd.headers[i].key);
+        dst += strlen(cmd.headers[i].key);
+
+        dst = strcat(dst, ":");
+        dst += 1;
+
+        dst = strcat(dst, cmd.headers[i].val);
+        dst += strlen(cmd.headers[i].val);
+    }
+    if (cmd.nheaders != 0) {
+        dst = strcat(dst, "\n\n");
+        dst += 2;
+    }
+    if (cmd.content != NULL) {
+        dst = strcat(dst, cmd.content);
+        dst += strlen(cmd.content);    
+
+        dst = strcat(dst, "\n\n");
+        dst += 2;
+    }
+
+    dst = '\0';
+    return 0;
+}
+
 int create_command(struct stomp_command cmd, char **str) {
     if (strncmp(cmd.name, "CONNECTED", 9) == 0) {
         *str = "CONNECTED"; 
+        return 0;
+    } else if (strncmp(cmd.name, "ERROR", 5) == 0) {
+        create_command_error(cmd, str);
         return 0;
     } else {
         return STOMP_UNKNOWN_COMMAND;    

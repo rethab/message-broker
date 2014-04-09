@@ -167,17 +167,18 @@ void test_create_command_connected() {
 void test_create_command_error() {
     struct stomp_command cmd;   
 
-    struct stomp_header msg;
-    msg.key = "message";
-    msg.val = "fail";
+    struct stomp_header hdr;
+    hdr.key = "message";
+    hdr.val = "fail";
     cmd.name = "ERROR";
-    cmd.headers = &msg;
+    cmd.headers = &hdr;
     cmd.content = NULL;
     cmd.nheaders = 1;
 
     char* str;
     CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
-    CU_ASSERT_STRING_EQUAL_FATAL("ERROR\nmesage:failed\n\n", str);
+    printf("String='%s'\n", str);
+    CU_ASSERT_STRING_EQUAL_FATAL("ERROR\nmessage:fail\n\n", str);
 }
 
 void test_create_command_message() {
