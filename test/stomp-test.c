@@ -140,11 +140,11 @@ void test_parse_command_disconnect() {
 
     // invalid header (wants none)
     char str2[] = "DISCONNECT\nfoo: bar\n\n";
-    CU_ASSERT_EQUAL_FATAL(STOMP_UNEXPECTED_HEADER,
+    CU_ASSERT_EQUAL_FATAL(STOMP_INVALID_HEADER,
         parse_command(str2, &cmd));
 
     char str3[] = "DISCONNECT\n\nfoo:bar\n\nbody\n\n";
-    CU_ASSERT_EQUAL_FATAL(STOMP_UNEXPECTED_HEADER,
+    CU_ASSERT_EQUAL_FATAL(STOMP_UNEXPECTED_CONTENT,
         parse_command(str3, &cmd));
 }
 
