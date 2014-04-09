@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 #include "stomp.h"
 
@@ -78,11 +79,6 @@ static int parse_header(char *raw, size_t expected,
     } else {
         return 0;
     }
-}
-
-static int parse_content(const char *raw, size_t expected,
-                    char **content) {
-    return -1;
 }
 
 static int split_cmd(char *raw, char **header, char **content) {
@@ -221,13 +217,15 @@ int parse_command(char* raw, struct stomp_command* cmd) {
     }
 }
 
-static int create_command_error(struct stomp_command cmd, char **str) {
+static int create_command_error(struct stomp_command cmd,
+        const char *cmdname, char **str) {
     int i;
     size_t len;
     char *dst;
 
     // length calc
-    len = 6; // error\n
+    len = 0;
+    len += strlen(cmdname) + 1; // name\n
     for (i = 0; i < cmd.nheaders; i++) {
         len += strlen(cmd.headers[i].key);
         len += 1; // :
@@ -241,12 +239,13 @@ static int create_command_error(struct stomp_command cmd, char **str) {
     len += 1; // \0
 
     // memory for string
-    *str = malloc(sizeof(char *) * len ); // MALLOC
+    *str = malloc(sizeof(char *) * len); // MALLOC
 
     // string construction, always reset dst to beginning
     // of next token
-    dst = strcat(*str, "ERROR\n");
-    dst += 6;
+    dst = strcat(*str, cmdname);
+    dst = strcat(dst, "\n");
+    dst += strlen(cmdname + 1); // name\n
     for (i = 0; i < cmd.nheaders; i++) {
         dst = strcat(dst, cmd.headers[i].key);
         dst += strlen(cmd.headers[i].key);
@@ -278,7 +277,7 @@ int create_command(struct stomp_command cmd, char **str) {
         *str = "CONNECTED"; 
         return 0;
     } else if (strncmp(cmd.name, "ERROR", 5) == 0) {
-        create_command_error(cmd, str);
+        create_command_error(cmd, "ERROR", str);
         return 0;
     } else {
         return STOMP_UNKNOWN_COMMAND;    
