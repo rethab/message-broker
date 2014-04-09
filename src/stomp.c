@@ -280,6 +280,8 @@ int create_command(struct stomp_command cmd, char **str) {
         return create_command_generic(cmd, cmd.name, str);
     } else if (strcmp(cmd.name, "MESSAGE") == 0) {
         return create_command_generic(cmd, cmd.name, str);
+    } else if (strcmp(cmd.name, "RECEIPT") == 0) {
+        return create_command_generic(cmd, cmd.name, str);
     } else {
         return STOMP_UNKNOWN_COMMAND;    
     }
