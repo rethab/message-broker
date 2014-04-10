@@ -56,6 +56,15 @@ void test_parse_command_connect() {
     char str5[] = "CONNECT\nlogin: client-1\n\nhello\n\n";
     CU_ASSERT_EQUAL_FATAL(STOMP_UNEXPECTED_CONTENT,
         parse_command(str5, &cmd));
+    // additional header
+    char str6[] = "CONNECT\nlogin: client-1\nfoo: bar\n\n";
+    CU_ASSERT_EQUAL_FATAL(STOMP_INVALID_HEADER,
+        parse_command(str6, &cmd));
+ 
+    // wrong header
+    char str7[] = "CONNECT\nfoo: bar\n\n";
+    CU_ASSERT_EQUAL_FATAL(STOMP_INVALID_HEADER,
+        parse_command(str7, &cmd));
 }
 
 void test_parse_command_send() {
@@ -91,10 +100,21 @@ void test_parse_command_send() {
     char str4[] = "SEND\ntopic:\n\n new price: 33.4\n\n";
     CU_ASSERT_EQUAL_FATAL(STOMP_INVALID_HEADER,
         parse_command(str4, &cmd));
+
     // empty value for topic header
     char str5[] = "SEND\ntopic: \n\n new price: 33.4\n\n";
     CU_ASSERT_EQUAL_FATAL(STOMP_INVALID_HEADER,
         parse_command(str5, &cmd));
+
+    // wrong header
+    char str6[] = "SEND\ntropic: foo\n\n new price: 33.4\n\n";
+    CU_ASSERT_EQUAL_FATAL(STOMP_INVALID_HEADER,
+        parse_command(str6, &cmd));
+    
+    // additional header
+    char str7[] = "SEND\ntopic: foo\nbar:wrapm\n\n new price: 33.4\n\n";
+    CU_ASSERT_EQUAL_FATAL(STOMP_INVALID_HEADER,
+        parse_command(str7, &cmd));
 }
 
 void test_parse_command_subscribe() {
@@ -128,6 +148,16 @@ void test_parse_command_subscribe() {
     char str5[] = "SUBSCRIBE\ndestination: stocks\n\nhello\n\n";
     CU_ASSERT_EQUAL_FATAL(STOMP_UNEXPECTED_CONTENT,
         parse_command(str5, &cmd));
+    
+    // wrong header
+    char str6[] = "SUBSCRIBE\ntopic: stocks\n\n";
+    CU_ASSERT_EQUAL_FATAL(STOMP_INVALID_HEADER,
+        parse_command(str6, &cmd));
+    
+    // additional header
+    char str7[] = "SUBSCRIBE\ntopic: stocks\ndestination: stocks\n\n";
+    CU_ASSERT_EQUAL_FATAL(STOMP_INVALID_HEADER,
+        parse_command(str7, &cmd));
 }
 
 void test_parse_command_disconnect() {
@@ -143,8 +173,8 @@ void test_parse_command_disconnect() {
     CU_ASSERT_EQUAL_FATAL(STOMP_INVALID_HEADER,
         parse_command(str2, &cmd));
 
-    char str3[] = "DISCONNECT\n\nfoo:bar\n\nbody\n\n";
-    CU_ASSERT_EQUAL_FATAL(STOMP_UNEXPECTED_CONTENT,
+    char str3[] = "DISCONNECT\nfoo:bar\n\nbody\n\n";
+    CU_ASSERT_EQUAL_FATAL(STOMP_INVALID_HEADER,
         parse_command(str3, &cmd));
 }
 

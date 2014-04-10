@@ -33,17 +33,22 @@ static void trim(char **str) {
  * the return code is 0 on success or any of the
  * STOMP_ error codes on failure.
  */
-static int parse_header(char *raw, int expected,
-                        struct stomp_header **headers) {
-    char *saveraw;
-    int i = 0;
+static int parse_header(char *raw, struct stomp_command *cmd) {
     char *rawline;
-    char *saveline;
+    char *saveraw, *saveline;
+    int i = 0;
+
+    if (raw == NULL && cmd->nheaders == 0)
+        return 0;
+    else if (raw == NULL && cmd->nheaders != 0)
+        return STOMP_MISSING_HEADER;
+
     rawline = strtok_r(raw, "\n", &saveraw);
-    if (rawline == NULL && expected != 0)
+    if (rawline == NULL && cmd->nheaders != 0)
         return STOMP_MISSING_HEADER;
     // at most expected, unless end or empty
-    while (i < expected && rawline != NULL && strnlen(rawline, 1) != 0) {
+    while (i < cmd->nheaders && rawline != NULL
+            && strnlen(rawline, 1) != 0) {
         char *line = strdup(rawline); // MALLOC
 
         // key
@@ -62,9 +67,11 @@ static int parse_header(char *raw, int expected,
         if (strtok_r(NULL, ":", &saveline) != NULL)
             return STOMP_INVALID_HEADER;
 
-
-        headers[i]->key = key;
-        headers[i]->val = val;
+        // correct header?
+        if (strcmp(cmd->headers[i].key, key) != 0)
+            return STOMP_INVALID_HEADER;
+        else 
+            cmd->headers[i].val = val;
 
         printf("Header: %s=%s\n", key, val);
 
@@ -72,7 +79,7 @@ static int parse_header(char *raw, int expected,
         i++;
     }
 
-    if (i < (expected-1)) {
+    if (i < (((int)cmd->nheaders)-1)) {
         return STOMP_MISSING_HEADER;   
     } else if (rawline != NULL) {
         return STOMP_INVALID_HEADER;
@@ -113,11 +120,8 @@ static int split_cmd(char *raw, char **header, char **content) {
 
 static int parse_command_generic(const char *cmdname,
         char *rawheader, const char *rawcontent,
-        size_t expected_headers, int expect_content,
-        struct stomp_command *cmd) {
-    struct stomp_header* headers =
-            malloc(sizeof(struct stomp_header) * expected_headers);
-    int parsed = parse_header(rawheader, expected_headers, &headers);
+        int expect_content, struct stomp_command *cmd) {
+    int parsed = parse_header(rawheader, cmd);
     if (parsed != 0) return parsed;
 
     if (expect_content == 1 && rawcontent == NULL)
@@ -128,8 +132,6 @@ static int parse_command_generic(const char *cmdname,
     printf("Content: %s\n", rawcontent);
 
     cmd->name = strdup(cmdname); // malloc
-    cmd->headers = headers;
-    cmd->nheaders = expected_headers;
     if (expect_content == 1) 
         cmd->content = strdup(rawcontent); // malloc
     else
@@ -139,26 +141,37 @@ static int parse_command_generic(const char *cmdname,
 
 static int parse_command_connect(char *rawheader,
                 const char *rawcontent, struct stomp_command* cmd) {
+    cmd->headers = malloc(sizeof(struct stomp_header));
+    cmd->headers[0].key = "login";
+    cmd->nheaders = 1;
     return parse_command_generic("CONNECT", rawheader,
-        rawcontent, 1, 0, cmd);
+        rawcontent, 0, cmd);
 }
 
 static int parse_command_send(char *rawheader,
                 const char *rawcontent, struct stomp_command* cmd) {
+    cmd->headers = malloc(sizeof(struct stomp_header));
+    cmd->headers[0].key = "topic";
+    cmd->nheaders = 1;
     return parse_command_generic("SEND", rawheader,
-        rawcontent, 1, 1, cmd);
+        rawcontent, 1, cmd);
 }
 
 static int parse_command_subscribe(char *rawheader,
                 const char *rawcontent, struct stomp_command* cmd) {
+    cmd->headers = malloc(sizeof(struct stomp_header));
+    cmd->headers[0].key = "destination";
+    cmd->nheaders = 1;
     return parse_command_generic("SUBSCRIBE", rawheader,
-        rawcontent, 1, 0, cmd);
+        rawcontent, 0, cmd);
 }
 
 static int parse_command_disconnect(char *rawheader,
                 const char *rawcontent, struct stomp_command* cmd) {
+    cmd->headers = NULL;
+    cmd->nheaders = 0;
     return parse_command_generic("DISCONNECT", rawheader,
-        rawcontent, 0, 0, cmd);
+        rawcontent, 0, cmd);
 }
 
 static int create_command_generic(struct stomp_command cmd,
