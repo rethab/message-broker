@@ -93,8 +93,6 @@
 #define STOMP_INVALID_CONTENT    -7
 #define STOMP_UNKNOWN_COMMAND    -8
 
-#define STOMP_MAX_CONTENT 2048
-
 struct stomp_header {
     char* key;
     char* val;
@@ -107,6 +105,19 @@ struct stomp_command {
     char*                content;
 };
 
+/* parses a raw string into the stomp_command struct.
+ * based on the command, different headers are expected
+ * if anything is missing from a command, an error
+ * code is returned. see the above error codes on the
+ * possibilities. if the parsing was successful, 0 is
+ * returned and the stomp_command struct is filled
+ *
+ * the raw string must be null-terminated.
+ */
 int parse_command(char* raw, struct stomp_command* cmd);
 
+/* assembles a string based on the passed command
+ * so that it may be sent to a client. no validations
+ * are made.
+ */
 int create_command(struct stomp_command cmd, char** str);

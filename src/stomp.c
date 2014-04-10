@@ -23,12 +23,14 @@ static void trim(char **str) {
  * on one line and the end of the headers marks
  * an empty line.
  *
- * the secod parameter is the number of headers
- * expected. this function returns an error code
- * if more than the expected headers are found.
+ * the stomp_command struct is expected to be
+ * partially filled with the number of headers
+ * that are expected for the command to be parsed.
+ * if more or less headers are found, an error
+ * is returned.
  *
- * the third parameter points to a pre allocated
- * header array of size 'expected'.
+ * the headers field in the stomp command is expected
+ * to be set with all keys for the expected headers.
  *
  * the return code is 0 on success or any of the
  * STOMP_ error codes on failure.
@@ -79,15 +81,24 @@ static int parse_header(char *raw, struct stomp_command *cmd) {
         i++;
     }
 
-    if (i < (((int)cmd->nheaders)-1)) {
-        return STOMP_MISSING_HEADER;   
-    } else if (rawline != NULL) {
-        return STOMP_INVALID_HEADER;
-    } else {
-        return 0;
-    }
+    if (i < (((int)cmd->nheaders)-1)) return STOMP_MISSING_HEADER;   
+    else if (rawline != NULL) return STOMP_INVALID_HEADER;
+    else return 0;
 }
 
+/*
+ * splits the raw string into header and content.
+ * it is assumed that both of them are separated by two
+ * newlines.
+ *
+ * the command name (including the newline) must
+ * have been removed before.
+ *
+ * the resulting pointers are assigned to the second
+ * and third param. if only one is present, it is
+ * assumed to be the header. and the other one is null.
+ * if none is present, both are set to null.
+ */
 static int split_cmd(char *raw, char **header, char **content) {
     char *headerend, *contentend;
 
@@ -118,6 +129,27 @@ static int split_cmd(char *raw, char **header, char **content) {
     return 0;
 }
 
+/*
+ * parses the raw header string and the raw
+ * content string into the command.
+ * the number of headers is expected to be set in
+ * the stomp_command struct.
+ *
+ * see the doc for the function parse_header
+ * for what is expected to be set in the headers
+ * field of the stomp_command struct.
+ *
+ * the parameter expect_content should be set
+ * to 1 if this command is expected to have
+ * content and 0 if it must not. there is no
+ * optional content, if the expectation is not
+ * met, an error is returned.
+ *
+ * on success, the stomp_command struct
+ * is filled with the parsed string and
+ * 0 is returned.
+ *
+ */
 static int parse_command_generic(const char *cmdname,
         char *rawheader, const char *rawcontent,
         int expect_content, struct stomp_command *cmd) {
@@ -174,6 +206,12 @@ static int parse_command_disconnect(char *rawheader,
         rawcontent, 0, cmd);
 }
 
+/*
+ * creates a string based on the passed command. no
+ * checks are done to validate the command -
+ * everything will be concatenated with separating
+ * newlines according to the specification.
+ */
 static int create_command_generic(struct stomp_command cmd,
         char **str) {
     int i;
@@ -235,6 +273,7 @@ static int create_command_generic(struct stomp_command cmd,
     return 0;
 }
 
+/* see header for doc */
 int parse_command(char* raw, struct stomp_command* cmd) {
     char *header, *content;
     int split;
@@ -260,7 +299,7 @@ int parse_command(char* raw, struct stomp_command* cmd) {
     }
 }
 
-
+/* see header for doc */
 int create_command(struct stomp_command cmd, char **str) {
     if (strcmp(cmd.name, "CONNECTED") == 0
      || strcmp(cmd.name, "ERROR") == 0
