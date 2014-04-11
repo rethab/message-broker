@@ -1,3 +1,5 @@
+#define TOPIC_CREATION_FAILED -2
+
 /* client interested in messages of a topic */
 struct subscriber {
 
@@ -52,24 +54,31 @@ struct message {
     struct list *stats;
 };
 
-struct list {
-    void *entry;
-    struct list *next;   
-};
-
-/* initializes a new list */
-int init_list(struct list *root);
-
-/* adds an entry to the end of the list */
-int add_to_list(struct list *list, void *entry);
-
 /* adds the subscriber to the topic. if the
  * topic does not exist, it is created
  */
 int add_subscriber_to_topic(struct list *topics, char *name,
     struct subscriber *subscriber);
 
-/* removes the subscriber identified by the 
- * subscriberid from all topics
- */
-int remove_subscriber(struct list *topics, int subscriberid);
+/* removes the subscriber from all topics */
+int remove_subscriber(struct list *topics, struct subscriber *subscriber);
+
+#define LIST_NOT_FOUND -2
+
+struct list {
+    struct node *root;
+};
+
+struct node {
+    void *entry;
+    struct node *next;   
+};
+
+/* initialize the list*/
+int list_init(struct list *list);
+
+/* adds an entry to the end of the list */
+int list_add(struct list *list, void *entry);
+
+/* removes an element from the list */
+int list_remove(struct list *list, void *entry);
