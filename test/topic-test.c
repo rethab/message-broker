@@ -43,6 +43,16 @@ static int nsubs(struct list *list, int subscriberid) {
     return nsubs;
 }
 
+static struct message *find_msg_by_content(struct list *messages, char *content) {
+    struct node *topics = messages->root;
+    for (; topics != NULL; topics = topics->next) {
+        struct message *msg = topics->entry;
+        if (strcmp(msg->content, content) == 0)
+            return msg;
+    }
+    return NULL;
+}
+
 /* returns the number of elements in a list */
 static int list_len(struct list *list) {
     struct node *cur = list->root;
@@ -232,6 +242,210 @@ void test_remove_subscriber() {
     CU_ASSERT_EQUAL_FATAL(2, list_len(&ts));
 }
 
+void test_add_message_1() {
+    int ret;
+    struct list topics;
+    struct list messages;
+    struct message *msg;
+    struct list *stats;
+    struct msg_statistics *msgstats;
+    struct subscriber sub1 = {1, 10, "hans"};
+    list_init(&topics);
+    list_init(&messages);
+
+    add_subscriber_to_topic(&topics, "stocks", &sub1);
+
+    // single message
+    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 33");
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+    CU_ASSERT_EQUAL_FATAL(1, list_len(&messages));
+    msg = find_msg_by_content(&messages, "price: 33");
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+    CU_ASSERT_STRING_EQUAL_FATAL("stocks", msg->topicname);
+    stats = msg->stats;
+    CU_ASSERT_EQUAL_FATAL(1, list_len(stats));
+    msgstats = stats->root->entry;
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
+    CU_ASSERT_EQUAL_FATAL(&sub1, msgstats->subscriber);
+}
+
+void test_add_message_2() {
+    int ret;
+    struct list topics;
+    struct list messages;
+    struct message *msg;
+    struct list *stats;
+    struct msg_statistics *msgstats;
+    struct subscriber sub1 = {1, 10, "hans"};
+    struct subscriber sub2 = {2, 20, "jakob"};
+    list_init(&topics);
+    list_init(&messages);
+
+    add_subscriber_to_topic(&topics, "stocks", &sub1);
+    add_subscriber_to_topic(&topics, "stocks", &sub2);
+
+    // single message
+    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 33");
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+    CU_ASSERT_EQUAL_FATAL(1, list_len(&messages));
+    msg = find_msg_by_content(&messages, "price: 33");
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+    CU_ASSERT_STRING_EQUAL_FATAL("stocks", msg->topicname);
+    stats = msg->stats;
+    CU_ASSERT_EQUAL_FATAL(2, list_len(stats));
+    msgstats = stats->root->entry;
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
+    CU_ASSERT_EQUAL_FATAL(&sub1, msgstats->subscriber);
+    msgstats = stats->root->next->entry;
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
+    CU_ASSERT_EQUAL_FATAL(&sub2, msgstats->subscriber);
+}
+
+void test_add_message_3() {
+    int ret;
+    struct list topics;
+    struct list messages;
+    struct message *msg;
+    struct list *stats;
+    struct msg_statistics *msgstats;
+    struct subscriber sub1 = {1, 10, "hans"};
+    struct subscriber sub2 = {2, 20, "jakob"};
+    list_init(&topics);
+    list_init(&messages);
+
+    add_subscriber_to_topic(&topics, "stocks", &sub1);
+    add_subscriber_to_topic(&topics, "stocks", &sub2);
+
+    // two messages
+    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 33");
+    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 34");
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+    CU_ASSERT_EQUAL_FATAL(2, list_len(&messages));
+
+    // first msg
+    msg = find_msg_by_content(&messages, "price: 33");
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+    CU_ASSERT_STRING_EQUAL_FATAL("stocks", msg->topicname);
+    stats = msg->stats;
+    CU_ASSERT_EQUAL_FATAL(2, list_len(stats));
+    msgstats = stats->root->entry;
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
+    CU_ASSERT_EQUAL_FATAL(&sub1, msgstats->subscriber);
+    msgstats = stats->root->next->entry;
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
+    CU_ASSERT_EQUAL_FATAL(&sub2, msgstats->subscriber);
+
+    // second msg
+    msg = find_msg_by_content(&messages, "price: 34");
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+    CU_ASSERT_STRING_EQUAL_FATAL("stocks", msg->topicname);
+    stats = msg->stats;
+    CU_ASSERT_EQUAL_FATAL(2, list_len(stats));
+    msgstats = stats->root->entry;
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
+    CU_ASSERT_EQUAL_FATAL(&sub1, msgstats->subscriber);
+    msgstats = stats->root->next->entry;
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
+    CU_ASSERT_EQUAL_FATAL(&sub2, msgstats->subscriber);
+}
+
+
+void test_add_message_late_subscriber() {
+    int ret;
+    struct list topics;
+    struct list messages;
+    struct message *msg;
+    struct list *stats;
+    struct msg_statistics *msgstats;
+    struct subscriber sub1 = {1, 10, "hans"};
+    struct subscriber sub2 = {2, 20, "jakob"};
+    list_init(&topics);
+    list_init(&messages);
+
+    add_subscriber_to_topic(&topics, "stocks", &sub1);
+
+    // subscriber gets messages that were sent before
+    // his arrival
+    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 33");
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+    CU_ASSERT_EQUAL_FATAL(1, list_len(&messages));
+
+    // first msg: only sub1
+    msg = find_msg_by_content(&messages, "price: 33");
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+    CU_ASSERT_STRING_EQUAL_FATAL("stocks", msg->topicname);
+    stats = msg->stats;
+    CU_ASSERT_EQUAL_FATAL(1, list_len(stats));
+    msgstats = stats->root->entry;
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
+    CU_ASSERT_EQUAL_FATAL(&sub1, msgstats->subscriber);
+
+    // snd msg: both
+    add_subscriber_to_topic(&topics, "stocks", &sub2);
+    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 34");
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+    CU_ASSERT_EQUAL_FATAL(2, list_len(&messages));
+    // first still only has one sub
+    msg = find_msg_by_content(&messages, "price: 33");
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+    CU_ASSERT_STRING_EQUAL_FATAL("stocks", msg->topicname);
+    stats = msg->stats;
+    CU_ASSERT_EQUAL_FATAL(1, list_len(stats));
+    msgstats = stats->root->entry;
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
+    CU_ASSERT_EQUAL_FATAL(&sub1, msgstats->subscriber);
+    // second has two subs
+    msg = find_msg_by_content(&messages, "price: 34");
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg);
+    CU_ASSERT_STRING_EQUAL_FATAL("stocks", msg->topicname);
+    stats = msg->stats;
+    CU_ASSERT_EQUAL_FATAL(2, list_len(stats));
+    msgstats = stats->root->entry;
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
+    CU_ASSERT_EQUAL_FATAL(&sub1, msgstats->subscriber);
+    msgstats = stats->root->next->entry;
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
+    CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
+    CU_ASSERT_EQUAL_FATAL(&sub2, msgstats->subscriber);
+}
+
+
+void test_add_message_5() {
+    int ret;
+    struct list topics;
+    struct list messages;
+    list_init(&topics);
+    list_init(&messages);
+    // inexistent topic
+    ret = add_message_to_topic(&topics, &messages, "foo", "price: 33");
+    CU_ASSERT_EQUAL_FATAL(TOPIC_NOT_FOUND, ret);
+}
+
+void test_add_message_no_subscriber() {
+    int ret;
+    struct list topics;
+    struct list messages;
+    struct subscriber sub1 = {1, 10, "hans"};
+    list_init(&topics);
+    list_init(&messages);
+    // add and remove sub to create topic
+    add_subscriber_to_topic(&topics, "stocks", &sub1);
+    remove_subscriber(&topics, &sub1);
+
+    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 33");
+    CU_ASSERT_EQUAL_FATAL(TOPIC_NO_SUBSCRIBERS, ret);
+}
+
 int main(int argc, char** argv) {
     install_segfault_handler();
 
@@ -246,6 +460,14 @@ int main(int argc, char** argv) {
         test_add_subscriber_to_topic);
     CU_add_test(topicSuite, "test_remove_subscriber",
         test_remove_subscriber);
+    CU_add_test(topicSuite, "test_add_message_1", test_add_message_1);
+    CU_add_test(topicSuite, "test_add_message_2", test_add_message_2);
+    CU_add_test(topicSuite, "test_add_message_3", test_add_message_3);
+    CU_add_test(topicSuite, "test_add_message_late_subscriber",
+        test_add_message_late_subscriber);
+    CU_add_test(topicSuite, "test_add_message_5", test_add_message_5);
+    CU_add_test(topicSuite, "test_add_message_no_subscriber",
+        test_add_message_no_subscriber);
 
     CU_basic_run_tests();
 

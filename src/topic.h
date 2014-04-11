@@ -1,4 +1,6 @@
 #define TOPIC_CREATION_FAILED -2
+#define TOPIC_NOT_FOUND       -3
+#define TOPIC_NO_SUBSCRIBERS  -4
 
 /* client interested in messages of a topic */
 struct subscriber {
@@ -47,8 +49,8 @@ struct message {
     /* content to be sent */
     char *content;
 
-    /* pointer to the topic it belongs to */
-    struct topic *topic;
+    /* name of the topic it belongs to */
+    char *topicname;
 
     /* statistics of this message, per subscriber */
     struct list *stats;
@@ -62,6 +64,14 @@ int add_subscriber_to_topic(struct list *topics, char *name,
 
 /* removes the subscriber from all topics */
 int remove_subscriber(struct list *topics, struct subscriber *subscriber);
+
+/* adds the message to the list of messages and
+ * copies the subscribers from the corresponding
+ * topic. if the topic does not exist, the error
+ * TOPIC_NOT_FOUND is returned */
+int add_message_to_topic(struct list *topics, struct list *messages,
+        char *topicname, char *content);
+
 
 #define LIST_NOT_FOUND -2
 

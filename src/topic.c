@@ -100,3 +100,36 @@ int remove_subscriber(struct list *topics, struct subscriber *subscriber) {
     }
     return 0;
 }
+
+int add_message_to_topic(struct list *topics, struct list *messages,
+        char *topicname, char *content){
+
+    struct topic *topic = find_topic(topics, topicname);
+    if (topic == NULL) return TOPIC_NOT_FOUND;
+    if (topic->subscribers->root == NULL) return TOPIC_NO_SUBSCRIBERS;
+
+    // message
+    struct message *msg = malloc(sizeof(struct message));
+    assert(msg != NULL);
+    msg->content = strdup(content);
+    msg->topicname = strdup(topicname);
+    msg->stats = malloc(sizeof(struct list));
+    assert(msg->stats != NULL);
+
+    // statistics, subs from topic
+    struct node *cur = topic->subscribers->root;
+    while (cur != NULL) {
+        struct subscriber *sub = cur->entry;
+        struct msg_statistics *stat = malloc(sizeof(struct msg_statistics));
+        assert(stat != NULL);
+        stat->last_fail = 0;
+        stat->nattempts = 0;
+        stat->subscriber = sub;
+        int ret = list_add(msg->stats, stat);
+        if (ret != 0) return ret;
+
+        cur = cur->next;
+    }
+
+    return list_add(messages, msg);
+}
