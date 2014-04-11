@@ -1,0 +1,48 @@
+-- NEW CLIENT CONNECTION --
+1. broker listens on socket, new connection is made
+2. new thread is created
+   a. reads from the socket (until \n\n\0 or max contents)
+   b. parses input from client, expects it to be CONNECT command
+   c. replies with CONNECTED command if thats the case, ERROR
+      otherwise
+   c. expects the client to send one of the following commands
+      I.   SEND
+      II.  SUBSCRIBE
+      III. DISCONNECT
+      
+-- COMMAND FROM CLIENT --
+1. SEND:
+    a. parses command, sends ERROR on failure
+    b. on success, inserts message into topic
+       I.  topic is created if it doesn't exist yet (*)
+       II. message is inserted into topic
+    c. expect client to send any command
+2. SUBSCRIBE:
+    a. parses command, returns ERROR on failure
+    b. adds consumer to the list of subscribers
+       of a topic based on the destiantion header.
+    c. expect client to send any command
+3. DISCONNECT:
+    a. parses command, return ERROR on failure
+    b. removes client from all lists it is subscribed to
+
+-- COMMAND FROM BROKER --
+1. MESSAGE:
+    a. distributor continuously checks topics
+    b. when a new message is inserted into the topic,
+       the distributor sends a copy to all subscribers
+    c. the distributor keeps track of which client has
+       successfully received
+2. ERROR:
+    a. sent as reply in above scenarios
+3. RECEIPT:
+    a. removeme??
+4. CONNECTED:
+    a. removeme??
+
+(*) does it make sense to create a topic from the client
+    upon sending? there will be no consumers, and we should
+    probably not handle that case, and define to only
+    send messages to consumers that have been subscribed at
+    the time of creation.
+    --> DECISION: NO
