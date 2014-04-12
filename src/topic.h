@@ -74,7 +74,8 @@ int topic_add_message(struct list *topics, struct list *messages,
 
 /* removes a subscriber from the message statistics.
  * this means that if a previous delivery failed,
- * it will not be attempted again */
+ * it will not be attempted again. if it is the last/only
+ * subscriber for that message, the message is removed. */
 int message_remove_subscriber(struct list *messages,
     struct subscriber *subscriber);
 
