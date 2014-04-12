@@ -3,8 +3,8 @@ TEST_CFLAGS=-Itest -lcunit -g -rdynamic
 
 all: broker
 
-broker: broker.c
-	gcc $(CFLAGS) -o broker broker.c
+broker: src/broker.c topic stomp
+	gcc $(CFLAGS) -o src/broker src/broker.c src/stomp.o src/topic.o
 
 test: test/main.o
 	test/main.o
@@ -19,6 +19,5 @@ stomp: src/stomp.c
 	gcc -c $(CFLAGS) -o src/stomp.o src/stomp.c
 
 clean:
-	rm -v test/*.o
-	rm -v src/*.o
-	rm -v broker
+	rm -fv test/*.o
+	rm -fv src/*.o
