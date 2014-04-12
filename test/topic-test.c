@@ -6,26 +6,7 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 
-#include "util.c"
 #include "../src/topic.h"
-
-/** TEST HELPER FUNCTIONS **/
-static void debug_print_topic(struct list *list) {
-    struct node *topics = list->root;
-    printf("** Debug Print Topics: **\n");   
-    for (; topics != NULL; topics = topics->next) {
-        struct topic *topic = topics->entry;
-        printf("   Topic Name: %s\n", topic->name);
-        printf("   Topic Subscribers:\n");
-
-        struct node *cur = topic->subscribers->root;
-        for (;cur != NULL; cur = cur->next) {
-           struct subscriber *sub = cur->entry;
-           printf("      ID: %d, Name: %s, Sockfd: %d\n",
-                sub->id, sub->name, sub->sockfd);
-        }           
-    }
-}
 
 /* returns the number of topics the subscriber is subscribed
  * to. 0 if it does not exist */
@@ -554,17 +535,15 @@ void test_msg_remove_subscriber_not_subscribed() {
     CU_ASSERT_EQUAL_FATAL(0, ret);
 }
 
-int main(int argc, char** argv) {
-    install_segfault_handler();
-
-    assert(CUE_SUCCESS == CU_initialize_registry());
-
+void topic_add_list_suite() {
     CU_pSuite listSuite = CU_add_suite("list", NULL, NULL);
     CU_add_test(listSuite, "test_add_remove_list",
         test_add_remove_list);
     CU_add_test(listSuite, "test_list_len",
         test_list_len);
+}
 
+void topic_add_topic_suite() {
     CU_pSuite topicSuite = CU_add_suite("topic", NULL, NULL);
     CU_add_test(topicSuite, "test_topic_add_subscriber",
         test_topic_add_subscriber);
@@ -586,9 +565,4 @@ int main(int argc, char** argv) {
         test_msg_remove_subscriber_last);
     CU_add_test(topicSuite, "test_msg_remove_subscriber_not_subscribed",
         test_msg_remove_subscriber_not_subscribed);
-
-    CU_basic_run_tests();
-
-    CU_cleanup_registry();
-    exit(EXIT_SUCCESS);
 }

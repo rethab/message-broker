@@ -206,4 +206,6 @@ int message_remove_subscriber(struct list *messages,
         free(msg->topicname);
         free(msg);
     }
+
+    return 0;
 }

@@ -75,8 +75,6 @@ static int parse_header(char *raw, struct stomp_command *cmd) {
         else 
             cmd->headers[i].val = val;
 
-        printf("Header: %s=%s\n", key, val);
-
         rawline = strtok_r(NULL, "\n", &saveraw);
         i++;
     }
@@ -161,8 +159,6 @@ static int parse_command_generic(const char *cmdname,
     else if (expect_content == 0 && rawcontent != NULL)
         return STOMP_UNEXPECTED_CONTENT;
     
-    printf("Content: %s\n", rawcontent);
-
     cmd->name = strdup(cmdname); // malloc
     if (expect_content == 1) 
         cmd->content = strdup(rawcontent); // malloc

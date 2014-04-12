@@ -6,7 +6,6 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 
-#include "util.c"
 #include "../src/stomp.h"
 
 /*   TEST PARSING OF CLIENT REQUESTS */
@@ -246,15 +245,7 @@ void test_create_command_receipt() {
     CU_ASSERT_STRING_EQUAL_FATAL("RECEIPT\n\n", str);
 }
 
-
-// function that takes an error value and
-// returns a frame ready to sent to a client
-
-int main(int argc, char** argv) {
-    install_segfault_handler();
-
-    assert(CUE_SUCCESS == CU_initialize_registry());
-
+void add_stomp_parse_suite() {
     CU_pSuite parseSuite = CU_add_suite("stomp_parse", NULL, NULL);
     CU_add_test(parseSuite, "test_parse_command_unknown",
         test_parse_command_unknown);
@@ -266,7 +257,9 @@ int main(int argc, char** argv) {
         test_parse_command_subscribe);
     CU_add_test(parseSuite, "test_parse_command_disconnect",
         test_parse_command_disconnect);
+}
 
+void add_stomp_create_suite() {
     CU_pSuite createSuite = CU_add_suite("stomp_create", NULL, NULL);
     CU_add_test(createSuite, "test_create_command_connected",
         test_create_command_connected);
@@ -276,9 +269,4 @@ int main(int argc, char** argv) {
         test_create_command_message);
     CU_add_test(createSuite, "test_create_command_receipt",
         test_create_command_receipt);
-    
-    CU_basic_run_tests();
-
-    CU_cleanup_registry();
-    exit(EXIT_SUCCESS);
 }
