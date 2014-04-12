@@ -13,6 +13,7 @@ int list_init(struct list *list) {
 int list_add(struct list *list, void *entry) {
     if (list->root == NULL) {
         list->root = malloc(sizeof (struct node));
+        assert(list->root != NULL);
         list->root->entry = entry;
         list->root->next = NULL;
     } else {
@@ -68,12 +69,17 @@ static struct topic *create_new_topic(struct list *topics, char *name) {
     int ret;
     struct topic *topic = malloc(sizeof(struct topic));
     assert(topic != NULL);
-    topic->name = strdup(name); // MALLOC
+    topic->name = strdup(name);
     topic->subscribers = malloc(sizeof(struct list));
     assert(topic->subscribers != NULL);
     topic->subscribers->root = NULL;
     ret = list_add(topics, topic);
-    if (ret != 0) return NULL;
+    if (ret != 0) {
+        free(topic->subscribers);
+        free(topic->name);
+        free(topic);
+        return NULL;
+    }
     return topic;
 }
 
@@ -126,7 +132,12 @@ int add_message_to_topic(struct list *topics, struct list *messages,
         stat->nattempts = 0;
         stat->subscriber = sub;
         int ret = list_add(msg->stats, stat);
-        if (ret != 0) return ret;
+        if (ret != 0) {
+            free(stat);
+            free(msg->stats);
+            free(msg);
+            return ret;
+        }
 
         cur = cur->next;
     }
