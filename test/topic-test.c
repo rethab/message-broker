@@ -167,7 +167,7 @@ void test_add_remove_list() {
     CU_ASSERT_EQUAL_FATAL(2, list_len(&list));
 } 
 
-void test_add_subscriber_to_topic() {
+void test_topic_add_subscriber() {
     int ret;
     struct list ts;
 
@@ -177,28 +177,28 @@ void test_add_subscriber_to_topic() {
     struct subscriber sub2 = {2, 20, "jakob"};
     struct subscriber sub3 = {3, 30, "marta"};
 
-    ret = add_subscriber_to_topic(&ts, "stocks", &sub1);
+    ret = topic_add_subscriber(&ts, "stocks", &sub1);
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(1, list_len(&ts));
     CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 1));
     CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 2));
     CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 3));
 
-    ret = add_subscriber_to_topic(&ts, "stocks", &sub2);
+    ret = topic_add_subscriber(&ts, "stocks", &sub2);
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(1, list_len(&ts));
     CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 1));
     CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 2));
     CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 3));
 
-    ret = add_subscriber_to_topic(&ts, "bounds", &sub2);
+    ret = topic_add_subscriber(&ts, "bounds", &sub2);
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(2, list_len(&ts));
     CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 1));
     CU_ASSERT_EQUAL_FATAL(2, nsubs(&ts, 2));
     CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 3));
 
-    ret = add_subscriber_to_topic(&ts, "stocks", &sub3);
+    ret = topic_add_subscriber(&ts, "stocks", &sub3);
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(2, list_len(&ts));
     CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 1));
@@ -206,7 +206,7 @@ void test_add_subscriber_to_topic() {
     CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 3));
 }
 
-void test_remove_subscriber() {
+void test_topic_remove_subscriber() {
     int ret;
     struct list ts;
 
@@ -215,24 +215,24 @@ void test_remove_subscriber() {
     struct subscriber sub1 = {1, 10, "hans"};
     struct subscriber sub2 = {2, 20, "jakob"};
     struct subscriber sub3 = {3, 30, "marta"};
-    add_subscriber_to_topic(&ts, "stocks", &sub1);
-    add_subscriber_to_topic(&ts, "stocks", &sub2);
-    add_subscriber_to_topic(&ts, "bounds", &sub2);
-    add_subscriber_to_topic(&ts, "stocks", &sub3);
+    topic_add_subscriber(&ts, "stocks", &sub1);
+    topic_add_subscriber(&ts, "stocks", &sub2);
+    topic_add_subscriber(&ts, "bounds", &sub2);
+    topic_add_subscriber(&ts, "stocks", &sub3);
 
-    ret = remove_subscriber(&ts, &sub2);
+    ret = topic_remove_subscriber(&ts, &sub2);
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 1));
     CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 2));
     CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 3));
 
-    ret = remove_subscriber(&ts, &sub1);
+    ret = topic_remove_subscriber(&ts, &sub1);
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 1));
     CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 2));
     CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 3));
 
-    ret = remove_subscriber(&ts, &sub3);
+    ret = topic_remove_subscriber(&ts, &sub3);
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 1));
     CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 2));
@@ -253,10 +253,10 @@ void test_add_message_1() {
     list_init(&topics);
     list_init(&messages);
 
-    add_subscriber_to_topic(&topics, "stocks", &sub1);
+    topic_add_subscriber(&topics, "stocks", &sub1);
 
     // single message
-    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 33");
+    ret = topic_add_message(&topics, &messages, "stocks", "price: 33");
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(1, list_len(&messages));
     msg = find_msg_by_content(&messages, "price: 33");
@@ -282,11 +282,11 @@ void test_add_message_2() {
     list_init(&topics);
     list_init(&messages);
 
-    add_subscriber_to_topic(&topics, "stocks", &sub1);
-    add_subscriber_to_topic(&topics, "stocks", &sub2);
+    topic_add_subscriber(&topics, "stocks", &sub1);
+    topic_add_subscriber(&topics, "stocks", &sub2);
 
     // single message
-    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 33");
+    ret = topic_add_message(&topics, &messages, "stocks", "price: 33");
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(1, list_len(&messages));
     msg = find_msg_by_content(&messages, "price: 33");
@@ -316,12 +316,12 @@ void test_add_message_3() {
     list_init(&topics);
     list_init(&messages);
 
-    add_subscriber_to_topic(&topics, "stocks", &sub1);
-    add_subscriber_to_topic(&topics, "stocks", &sub2);
+    topic_add_subscriber(&topics, "stocks", &sub1);
+    topic_add_subscriber(&topics, "stocks", &sub2);
 
     // two messages
-    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 33");
-    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 34");
+    ret = topic_add_message(&topics, &messages, "stocks", "price: 33");
+    ret = topic_add_message(&topics, &messages, "stocks", "price: 34");
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(2, list_len(&messages));
 
@@ -369,11 +369,11 @@ void test_add_message_late_subscriber() {
     list_init(&topics);
     list_init(&messages);
 
-    add_subscriber_to_topic(&topics, "stocks", &sub1);
+    topic_add_subscriber(&topics, "stocks", &sub1);
 
     // subscriber gets messages that were sent before
     // his arrival
-    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 33");
+    ret = topic_add_message(&topics, &messages, "stocks", "price: 33");
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(1, list_len(&messages));
 
@@ -389,8 +389,8 @@ void test_add_message_late_subscriber() {
     CU_ASSERT_EQUAL_FATAL(&sub1, msgstats->subscriber);
 
     // snd msg: both
-    add_subscriber_to_topic(&topics, "stocks", &sub2);
-    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 34");
+    topic_add_subscriber(&topics, "stocks", &sub2);
+    ret = topic_add_message(&topics, &messages, "stocks", "price: 34");
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(2, list_len(&messages));
     // first still only has one sub
@@ -427,7 +427,7 @@ void test_add_message_5() {
     list_init(&topics);
     list_init(&messages);
     // inexistent topic
-    ret = add_message_to_topic(&topics, &messages, "foo", "price: 33");
+    ret = topic_add_message(&topics, &messages, "foo", "price: 33");
     CU_ASSERT_EQUAL_FATAL(TOPIC_NOT_FOUND, ret);
 }
 
@@ -439,10 +439,10 @@ void test_add_message_no_subscriber() {
     list_init(&topics);
     list_init(&messages);
     // add and remove sub to create topic
-    add_subscriber_to_topic(&topics, "stocks", &sub1);
-    remove_subscriber(&topics, &sub1);
+    topic_add_subscriber(&topics, "stocks", &sub1);
+    topic_remove_subscriber(&topics, &sub1);
 
-    ret = add_message_to_topic(&topics, &messages, "stocks", "price: 33");
+    ret = topic_add_message(&topics, &messages, "stocks", "price: 33");
     CU_ASSERT_EQUAL_FATAL(TOPIC_NO_SUBSCRIBERS, ret);
 }
 
@@ -456,10 +456,10 @@ int main(int argc, char** argv) {
         test_add_remove_list);
 
     CU_pSuite topicSuite = CU_add_suite("topic", NULL, NULL);
-    CU_add_test(topicSuite, "test_add_subscriber_to_topic",
-        test_add_subscriber_to_topic);
-    CU_add_test(topicSuite, "test_remove_subscriber",
-        test_remove_subscriber);
+    CU_add_test(topicSuite, "test_topic_add_subscriber",
+        test_topic_add_subscriber);
+    CU_add_test(topicSuite, "test_topic_remove_subscriber",
+        test_topic_remove_subscriber);
     CU_add_test(topicSuite, "test_add_message_1", test_add_message_1);
     CU_add_test(topicSuite, "test_add_message_2", test_add_message_2);
     CU_add_test(topicSuite, "test_add_message_3", test_add_message_3);

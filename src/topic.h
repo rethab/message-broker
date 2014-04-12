@@ -59,17 +59,17 @@ struct message {
 /* adds the subscriber to the topic. if the
  * topic does not exist, it is created
  */
-int add_subscriber_to_topic(struct list *topics, char *name,
+int topic_add_subscriber(struct list *topics, char *name,
     struct subscriber *subscriber);
 
 /* removes the subscriber from all topics */
-int remove_subscriber(struct list *topics, struct subscriber *subscriber);
+int topic_remove_subscriber(struct list *topics, struct subscriber *subscriber);
 
 /* adds the message to the list of messages and
  * copies the subscribers from the corresponding
  * topic. if the topic does not exist, the error
  * TOPIC_NOT_FOUND is returned */
-int add_message_to_topic(struct list *topics, struct list *messages,
+int topic_add_message(struct list *topics, struct list *messages,
         char *topicname, char *content);
 
 

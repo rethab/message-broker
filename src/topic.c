@@ -83,7 +83,7 @@ static struct topic *create_new_topic(struct list *topics, char *name) {
     return topic;
 }
 
-int add_subscriber_to_topic(struct list *topics, char *name,
+int topic_add_subscriber(struct list *topics, char *name,
                 struct subscriber *subscriber) {
     struct topic *topic = find_topic(topics, name);
     if (topic == NULL) {
@@ -93,7 +93,8 @@ int add_subscriber_to_topic(struct list *topics, char *name,
     return list_add(topic->subscribers, subscriber);
 }
 
-int remove_subscriber(struct list *topics, struct subscriber *subscriber) {
+int topic_remove_subscriber(struct list *topics,
+            struct subscriber *subscriber) {
     int ret;
     struct node *cur = topics->root;
     while (cur != NULL) {
@@ -107,7 +108,7 @@ int remove_subscriber(struct list *topics, struct subscriber *subscriber) {
     return 0;
 }
 
-int add_message_to_topic(struct list *topics, struct list *messages,
+int topic_add_message(struct list *topics, struct list *messages,
         char *topicname, char *content){
 
     struct topic *topic = find_topic(topics, topicname);
