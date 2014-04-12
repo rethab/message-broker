@@ -72,6 +72,12 @@ int topic_remove_subscriber(struct list *topics, struct subscriber *subscriber);
 int topic_add_message(struct list *topics, struct list *messages,
         char *topicname, char *content);
 
+/* removes a subscriber from the message statistics.
+ * this means that if a previous delivery failed,
+ * it will not be attempted again */
+int message_remove_subscriber(struct list *messages,
+    struct subscriber *subscriber);
+
 
 #define LIST_NOT_FOUND -2
 
@@ -92,3 +98,6 @@ int list_add(struct list *list, void *entry);
 
 /* removes an element from the list */
 int list_remove(struct list *list, void *entry);
+
+/* checks whether the list is empty */
+int list_empty(struct list *list);

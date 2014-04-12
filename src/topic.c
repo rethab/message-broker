@@ -27,12 +27,22 @@ int list_add(struct list *list, void *entry) {
     return 0;
 }
 
-int list_remove(struct list *list, void *entry) {
+int list_empty(struct list *list) {
+    return list->root == NULL;
+}
+
+/* removes an element from the list based on the
+ * compare function. the third arg is passed
+ * to the compare function as the second parameter
+ */
+static int list_remove_generic(struct list *list,
+        int (*cmp)(const void *, const void *),
+        const void *entry) {
     // empty list
     if (list->root == NULL) return LIST_NOT_FOUND;
 
     // replace root
-    if (list->root->entry == entry) {
+    if (cmp(list->root->entry, entry)) {
         struct node *nxt = list->root->next;
         free(list->root);
         list->root = nxt;
@@ -41,7 +51,7 @@ int list_remove(struct list *list, void *entry) {
     struct node *prev = list->root;
     struct node *cur = list->root->next;
     while (cur != NULL) {
-        if (cur->entry == entry) {
+        if (cmp(cur->entry, entry)) {
             prev->next = cur->next;
             free(cur);
             return 0;
@@ -51,6 +61,14 @@ int list_remove(struct list *list, void *entry) {
         }
     }
     return LIST_NOT_FOUND;
+}
+
+static int list_cmp_same_ref(const void *a, const void *b) {
+    return a == b;
+}
+
+int list_remove(struct list *list, void *entry) {
+    return list_remove_generic(list, list_cmp_same_ref, entry);
 }
 
 static struct topic *find_topic(struct list *topics, char *name) {
@@ -72,7 +90,7 @@ static struct topic *create_new_topic(struct list *topics, char *name) {
     topic->name = strdup(name);
     topic->subscribers = malloc(sizeof(struct list));
     assert(topic->subscribers != NULL);
-    topic->subscribers->root = NULL;
+    list_init(topic->subscribers);
     ret = list_add(topics, topic);
     if (ret != 0) {
         free(topic->subscribers);
@@ -113,7 +131,7 @@ int topic_add_message(struct list *topics, struct list *messages,
 
     struct topic *topic = find_topic(topics, topicname);
     if (topic == NULL) return TOPIC_NOT_FOUND;
-    if (topic->subscribers->root == NULL) return TOPIC_NO_SUBSCRIBERS;
+    if (list_empty(topic->subscribers)) return TOPIC_NO_SUBSCRIBERS;
 
     // message
     struct message *msg = malloc(sizeof(struct message));
@@ -121,6 +139,7 @@ int topic_add_message(struct list *topics, struct list *messages,
     msg->content = strdup(content);
     msg->topicname = strdup(topicname);
     msg->stats = malloc(sizeof(struct list));
+    list_init(msg->stats);
     assert(msg->stats != NULL);
 
     // statistics, subs from topic
@@ -144,4 +163,47 @@ int topic_add_message(struct list *topics, struct list *messages,
     }
 
     return list_add(messages, msg);
+}
+
+static int same_subscriber(const void *a, const void *b) {
+    const struct msg_statistics *as = a;
+    const struct msg_statistics *bs = b;
+    return as->subscriber == bs->subscriber;
+}
+
+int message_remove_subscriber(struct list *messages,
+        struct subscriber *subscriber) {
+    int ret;
+
+    struct list emptymsgs;
+    list_init(&emptymsgs);
+
+    // to compare against
+    struct msg_statistics stat;
+    stat.subscriber = subscriber;
+
+    struct node *cur = messages->root;
+    for (;cur != NULL; cur = cur->next) {
+        struct message *msg = cur->entry;
+        ret = list_remove_generic(msg->stats, same_subscriber, &stat);
+        if (ret == LIST_NOT_FOUND) ; // ok
+        else if (ret != 0) return ret;
+
+        // remove entire message if this was the last/only sub
+        if (list_empty(msg->stats)) {
+            ret = list_add(&emptymsgs, msg);
+            if (ret != 0) return ret;
+        }
+    }
+
+    // cleanup
+    for (cur = emptymsgs.root; cur != NULL; cur = cur->next) {
+        struct message *msg = cur->entry;
+        ret = list_remove(messages, msg);
+        if (ret != 0) return ret;
+        free(msg->stats);
+        free(msg->content);
+        free(msg->topicname);
+        free(msg);
+    }
 }
