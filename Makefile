@@ -23,3 +23,5 @@ stomp: src/stomp.c
 clean:
 	rm -fv test/*.o
 	rm -fv src/*.o
+	rm -fv src/broker
+	rm -fv src/client
