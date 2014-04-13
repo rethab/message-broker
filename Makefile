@@ -4,7 +4,9 @@ TEST_CFLAGS=-Itest -lcunit -g -rdynamic
 all: broker
 
 broker: src/broker.c topic stomp
-	gcc $(CFLAGS) -o src/broker src/broker.c src/stomp.o src/topic.o
+
+client: src/client.c stomp
+	gcc $(CFLAGS) -o src/client src/client.c src/stomp.o 
 
 test: test/main.o
 	test/main.o
