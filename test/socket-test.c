@@ -85,6 +85,34 @@ void test_read_command_invalid_socket() {
     pthread_mutex_destroy(&mutex);
 }
 
+void test_read_command_too_much() {
+    int ret;
+    int fds[2]; // 0=read, 1=write
+    struct client client;
+    struct stomp_command cmd;
+    char rawcmd[1025];
+    for (int i = 0; i < 1024; i++) {
+        rawcmd[i] = 'a';
+    }
+    rawcmd[1024] = '\0';
+
+    assert(pipe(fds) == 0);
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    client.sockfd = fds[0];
+    client.mutex_r = &mutex;
+
+    assert(write(fds[1], rawcmd, 1025) > 0);
+    ret = socket_read_command(client, &cmd);
+
+    CU_ASSERT_EQUAL_FATAL(SOCKET_TOO_MUCH, ret);
+    // mutex should be freed again
+    CU_ASSERT_EQUAL_FATAL(0, pthread_mutex_trylock(&mutex));
+
+    close(fds[0]);
+    close(fds[1]);
+    pthread_mutex_destroy(&mutex);
+}
+
 void test_write_command() {
     int ret;
     int fds[2]; // 0=read, 1=write
@@ -148,6 +176,8 @@ void socket_test_suite() {
     CU_add_test(socketSuite, "test_read_command_fail", test_read_command_fail);
     CU_add_test(socketSuite, "test_read_command_invalid_socket",
         test_read_command_invalid_socket);
+    CU_add_test(socketSuite, "test_read_command_too_much",
+        test_read_command_too_much);
     CU_add_test(socketSuite, "test_write_command_socket_closed",
         test_write_command_socket_closed);
     CU_add_test(socketSuite, "test_write_command", test_write_command);

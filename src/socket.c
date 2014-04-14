@@ -19,8 +19,8 @@ int socket_read_command(struct client client, struct stomp_command *cmd) {
     while (pos < BUFSIZE) {
         ret = read(client.sockfd, &c, 1); 
         if (ret != 1) {
-            return ret;
-            break;
+            fprintf(stderr, "read: %s\n", strerror(errno));
+            return SOCKET_CLIENT_GONE;
         }
 
         buf[pos++] = c;
