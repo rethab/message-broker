@@ -1,12 +1,12 @@
+#ifndef TOPIC_HEADER
+#define TOPIC_HEADER
+
 #define TOPIC_CREATION_FAILED -2
 #define TOPIC_NOT_FOUND       -3
 #define TOPIC_NO_SUBSCRIBERS  -4
 
 /* client interested in messages of a topic */
 struct subscriber {
-
-    /* unique internal id */
-    int id;
 
     /* file desriptor used for communication */
     int sockfd;
@@ -68,7 +68,8 @@ int topic_remove_subscriber(struct list *topics, struct subscriber *subscriber);
 /* adds the message to the list of messages and
  * copies the subscribers from the corresponding
  * topic. if the topic does not exist, the error
- * TOPIC_NOT_FOUND is returned */
+ * TOPIC_NOT_FOUND is returned (topic is created
+ * with the first subscriber) */
 int topic_add_message(struct list *topics, struct list *messages,
         char *topicname, char *content);
 
@@ -102,3 +103,5 @@ int list_remove(struct list *list, void *entry);
 
 /* checks whether the list is empty */
 int list_empty(struct list *list);
+
+#endif

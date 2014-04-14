@@ -1,3 +1,5 @@
+#ifndef STOMP_HEADER
+#define STOMP_HEADER
 /*
  * STOMP Protocol
  *
@@ -121,3 +123,9 @@ int parse_command(char* raw, struct stomp_command* cmd);
  * are made.
  */
 int create_command(struct stomp_command cmd, char** str);
+
+/* converts a stomp error code (STOMP_) to a string.
+ * the buffer should be 32 bytes */
+void stomp_strerror(int errcode, char *buf);
+
+#endif

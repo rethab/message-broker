@@ -306,3 +306,31 @@ int create_command(struct stomp_command cmd, char **str) {
         return STOMP_UNKNOWN_COMMAND;
     }
 }
+
+void stomp_strerror(int errcode, char *buf) {
+    switch (errcode) {
+        case STOMP_MISSING_HEADER:
+            sprintf(buf, "STOMP_MISSING_HEADER");
+            break;
+        case STOMP_INVALID_HEADER:
+            sprintf(buf,"STOMP_INVALID_HEADER");
+            break;
+        case STOMP_UNEXPECTED_HEADER:
+            sprintf(buf,"STOMP_UNEXPECTED_HEADER");
+            break;
+        case STOMP_UNEXPECTED_CONTENT:
+            sprintf(buf,"STOMP_UNEXPECTED_CONTENT");
+            break;
+        case STOMP_MISSING_CONTENT:
+            sprintf(buf,"STOMP_MISSING_CONTENT");
+            break;
+        case STOMP_INVALID_CONTENT:
+            sprintf(buf,"STOMP_INVALID_CONTENT");
+            break;
+        case STOMP_UNKNOWN_COMMAND:
+            sprintf(buf,"STOMP_UNKNOWN_COMMAND");
+            break;
+        default:
+            sprintf(buf, "UNKNOWN_ERROR");
+    }
+}

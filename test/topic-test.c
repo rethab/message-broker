@@ -10,15 +10,15 @@
 
 /* returns the number of topics the subscriber is subscribed
  * to. 0 if it does not exist */
-static int nsubs(struct list *list, int subscriberid) {
+static int nsubs(struct list *list, struct subscriber *sub) {
     struct node *topics = list->root;
     int nsubs = 0;
     for (; topics != NULL; topics = topics->next) {
         struct topic *topic = topics->entry;
         struct node *cur = topic->subscribers->root;
         for (;cur != NULL; cur = cur->next) {
-           struct subscriber *sub = cur->entry;
-           if (sub->id == subscriberid) nsubs++;
+           struct subscriber *cursub = cur->entry;
+           if (cursub == sub) nsubs++;
         }           
     }
     return nsubs;
@@ -171,37 +171,37 @@ void test_topic_add_subscriber() {
 
     list_init(&ts);
 
-    struct subscriber sub1 = {1, 10, "hans"};
-    struct subscriber sub2 = {2, 20, "jakob"};
-    struct subscriber sub3 = {3, 30, "marta"};
+    struct subscriber sub1 = {10, "hans"};
+    struct subscriber sub2 = {20, "jakob"};
+    struct subscriber sub3 = {30, "marta"};
 
     ret = topic_add_subscriber(&ts, "stocks", &sub1);
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(1, list_len(&ts));
-    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 1));
-    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 2));
-    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 3));
+    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, &sub1));
+    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, &sub2));
+    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, &sub3));
 
     ret = topic_add_subscriber(&ts, "stocks", &sub2);
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(1, list_len(&ts));
-    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 1));
-    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 2));
-    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 3));
+    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, &sub1));
+    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, &sub2));
+    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, &sub3));
 
     ret = topic_add_subscriber(&ts, "bounds", &sub2);
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(2, list_len(&ts));
-    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 1));
-    CU_ASSERT_EQUAL_FATAL(2, nsubs(&ts, 2));
-    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 3));
+    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, &sub1));
+    CU_ASSERT_EQUAL_FATAL(2, nsubs(&ts, &sub2));
+    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, &sub3));
 
     ret = topic_add_subscriber(&ts, "stocks", &sub3);
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(2, list_len(&ts));
-    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 1));
-    CU_ASSERT_EQUAL_FATAL(2, nsubs(&ts, 2));
-    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 3));
+    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, &sub1));
+    CU_ASSERT_EQUAL_FATAL(2, nsubs(&ts, &sub2));
+    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, &sub3));
 }
 
 void test_topic_remove_subscriber() {
@@ -210,9 +210,9 @@ void test_topic_remove_subscriber() {
 
     list_init(&ts);
 
-    struct subscriber sub1 = {1, 10, "hans"};
-    struct subscriber sub2 = {2, 20, "jakob"};
-    struct subscriber sub3 = {3, 30, "marta"};
+    struct subscriber sub1 = {10, "hans"};
+    struct subscriber sub2 = {20, "jakob"};
+    struct subscriber sub3 = {30, "marta"};
     topic_add_subscriber(&ts, "stocks", &sub1);
     topic_add_subscriber(&ts, "stocks", &sub2);
     topic_add_subscriber(&ts, "bounds", &sub2);
@@ -220,21 +220,21 @@ void test_topic_remove_subscriber() {
 
     ret = topic_remove_subscriber(&ts, &sub2);
     CU_ASSERT_EQUAL_FATAL(0, ret);
-    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 1));
-    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 2));
-    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 3));
+    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, &sub1));
+    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, &sub2));
+    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, &sub3));
 
     ret = topic_remove_subscriber(&ts, &sub1);
     CU_ASSERT_EQUAL_FATAL(0, ret);
-    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 1));
-    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 2));
-    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, 3));
+    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, &sub1));
+    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, &sub2));
+    CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, &sub3));
 
     ret = topic_remove_subscriber(&ts, &sub3);
     CU_ASSERT_EQUAL_FATAL(0, ret);
-    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 1));
-    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 2));
-    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, 3));
+    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, &sub1));
+    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, &sub2));
+    CU_ASSERT_EQUAL_FATAL(0, nsubs(&ts, &sub3));
 
     // topics are not removed
     CU_ASSERT_EQUAL_FATAL(2, list_len(&ts));
@@ -247,7 +247,7 @@ void test_add_message_1() {
     struct message *msg;
     struct list *stats;
     struct msg_statistics *msgstats;
-    struct subscriber sub1 = {1, 10, "hans"};
+    struct subscriber sub1 = {10, "hans"};
     list_init(&topics);
     list_init(&messages);
 
@@ -275,8 +275,8 @@ void test_add_message_2() {
     struct message *msg;
     struct list *stats;
     struct msg_statistics *msgstats;
-    struct subscriber sub1 = {1, 10, "hans"};
-    struct subscriber sub2 = {2, 20, "jakob"};
+    struct subscriber sub1 = {10, "hans"};
+    struct subscriber sub2 = {20, "jakob"};
     list_init(&topics);
     list_init(&messages);
 
@@ -309,8 +309,8 @@ void test_add_message_3() {
     struct message *msg;
     struct list *stats;
     struct msg_statistics *msgstats;
-    struct subscriber sub1 = {1, 10, "hans"};
-    struct subscriber sub2 = {2, 20, "jakob"};
+    struct subscriber sub1 = {10, "hans"};
+    struct subscriber sub2 = {20, "jakob"};
     list_init(&topics);
     list_init(&messages);
 
@@ -362,8 +362,8 @@ void test_add_message_late_subscriber() {
     struct message *msg;
     struct list *stats;
     struct msg_statistics *msgstats;
-    struct subscriber sub1 = {1, 10, "hans"};
-    struct subscriber sub2 = {2, 20, "jakob"};
+    struct subscriber sub1 = {10, "hans"};
+    struct subscriber sub2 = {20, "jakob"};
     list_init(&topics);
     list_init(&messages);
 
@@ -433,7 +433,7 @@ void test_add_message_no_subscriber() {
     int ret;
     struct list topics;
     struct list messages;
-    struct subscriber sub1 = {1, 10, "hans"};
+    struct subscriber sub1 = {10, "hans"};
     list_init(&topics);
     list_init(&messages);
     // add and remove sub to create topic
@@ -448,8 +448,8 @@ void test_msg_remove_subscriber_first() {
     int ret;
     struct list topics;
     struct list messages;
-    struct subscriber sub1 = {1, 10, "hans"};
-    struct subscriber sub2 = {2, 20, "jakob"};
+    struct subscriber sub1 = {10, "hans"};
+    struct subscriber sub2 = {20, "jakob"};
     struct message *msg;
     struct msg_statistics *stat;
     list_init(&topics);
@@ -470,8 +470,8 @@ void test_msg_remove_subscriber_second() {
     int ret;
     struct list topics;
     struct list messages;
-    struct subscriber sub1 = {1, 10, "hans"};
-    struct subscriber sub2 = {2, 20, "jakob"};
+    struct subscriber sub1 = {10, "hans"};
+    struct subscriber sub2 = {20, "jakob"};
     struct message *msg;
     struct msg_statistics *stat;
     list_init(&topics);
@@ -492,7 +492,7 @@ void test_msg_remove_subscriber_last() {
     int ret;
     struct list topics;
     struct list messages;
-    struct subscriber sub1 = {1, 10, "hans"};
+    struct subscriber sub1 = {10, "hans"};
     struct message *msg;
 
     // one message
@@ -524,8 +524,8 @@ void test_msg_remove_subscriber_last() {
 void test_msg_remove_subscriber_not_subscribed() {
     struct list topics;
     struct list messages;
-    struct subscriber sub1 = {1, 10, "hans"};
-    struct subscriber sub2 = {2, 20, "jakob"};
+    struct subscriber sub1 = {10, "hans"};
+    struct subscriber sub2 = {20, "jakob"};
     list_init(&topics);
     list_init(&messages);
     topic_add_subscriber(&topics, "stocks", &sub1);

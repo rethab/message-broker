@@ -41,10 +41,47 @@ int main(int argc, char *argv[]) {
     if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0) 
         error("ERROR connecting");
 
-    char cmd[] = "CONNECT\nlogin:foo\n\n";
-    n = write(sockfd, cmd, strlen(cmd));
-    if (n != strlen(cmd)) {
+    // connect
+    printf("Send connect\n");
+    char cmd1[] = "CONNECT\nlogin:foo\n\n";
+    n = write(sockfd, cmd1, strlen(cmd1) + 1);
+    if (n != strlen(cmd1) + 1) {
         fprintf(stderr, "Error: %s\n", strerror(errno));
     } 
+
+    // subscribe
+    printf("Send subscribe\n");
+    char cmd2[] = "SUBSCRIBE\ndestination:stocks\n\n";
+    n = write(sockfd, cmd2, strlen(cmd2) + 1);
+    if (n != strlen(cmd2) + 1) {
+        fprintf(stderr, "Error: %s\n", strerror(errno));
+    } 
+
+    // send
+    printf("Send send\n");
+    char cmd3[] = "SEND\ntopic:stocks\n\nhello, world\n\n";
+    n = write(sockfd, cmd3, strlen(cmd3) + 1);
+    if (n != strlen(cmd3) + 1) {
+        fprintf(stderr, "Error: %s\n", strerror(errno));
+    } 
+
+    // disconnect
+    printf("Send disconnect\n");
+    char cmd4[] = "DISCONNECT\n\n";
+    n = write(sockfd, cmd4, strlen(cmd4) + 1);
+    if (n != strlen(cmd4) + 1) {
+        fprintf(stderr, "Error: %s\n", strerror(errno));
+    } 
+
+    int nbytes;
+    char buf[1024];
+    while (1) {
+        nbytes = read(sockfd, &buf, 1024);
+        if (nbytes == -1) 
+            fprintf(stderr, "Error: %s\n", strerror(errno));
+
+        buf[nbytes] = '\0';
+        printf("Read From Server: '%s'\n", buf);
+    }
     return 0;
 }

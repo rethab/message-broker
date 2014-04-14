@@ -245,6 +245,30 @@ void test_create_command_receipt() {
     CU_ASSERT_STRING_EQUAL_FATAL("RECEIPT\n\n", str);
 }
 
+void test_strerror() {
+    char buf[32];
+    stomp_strerror(STOMP_MISSING_HEADER, buf);
+    CU_ASSERT_STRING_EQUAL_FATAL("STOMP_MISSING_HEADER", buf);
+
+    stomp_strerror(STOMP_INVALID_HEADER, buf);
+    CU_ASSERT_STRING_EQUAL_FATAL("STOMP_INVALID_HEADER", buf);
+
+    stomp_strerror(STOMP_UNEXPECTED_HEADER, buf);
+    CU_ASSERT_STRING_EQUAL_FATAL("STOMP_UNEXPECTED_HEADER", buf);
+
+    stomp_strerror(STOMP_UNEXPECTED_CONTENT, buf);
+    CU_ASSERT_STRING_EQUAL_FATAL("STOMP_UNEXPECTED_CONTENT", buf);
+
+    stomp_strerror(STOMP_MISSING_CONTENT, buf);
+    CU_ASSERT_STRING_EQUAL_FATAL("STOMP_MISSING_CONTENT", buf);
+
+    stomp_strerror(STOMP_INVALID_CONTENT, buf);
+    CU_ASSERT_STRING_EQUAL_FATAL("STOMP_INVALID_CONTENT", buf);
+
+    stomp_strerror(STOMP_UNKNOWN_COMMAND, buf);
+    CU_ASSERT_STRING_EQUAL_FATAL("STOMP_UNKNOWN_COMMAND", buf);
+}
+
 void add_stomp_parse_suite() {
     CU_pSuite parseSuite = CU_add_suite("stomp_parse", NULL, NULL);
     CU_add_test(parseSuite, "test_parse_command_unknown",
@@ -269,4 +293,6 @@ void add_stomp_create_suite() {
         test_create_command_message);
     CU_add_test(createSuite, "test_create_command_receipt",
         test_create_command_receipt);
+    CU_add_test(createSuite, "test_strerror",
+        test_strerror);
 }
