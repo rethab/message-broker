@@ -87,7 +87,7 @@ int socket_send_command(struct client client, struct stomp_command cmd) {
 
     free(resp);
     if (ret == -1) {
-        fprintf(stderr, "Error: %d: %s\n", errno, strerror(errno));
+        fprintf(stderr, "Error: %s\n", strerror(errno));
         return SOCKET_CLIENT_GONE;
     }
 
