@@ -8,6 +8,10 @@
 
 #include "../src/topic.h"
 
+static struct client c1;
+static struct client c2;
+static struct client c3;
+
 /* returns the number of topics the subscriber is subscribed
  * to. 0 if it does not exist */
 static int nsubs(struct list *list, struct subscriber *sub) {
@@ -171,9 +175,9 @@ void test_topic_add_subscriber() {
 
     list_init(&ts);
 
-    struct subscriber sub1 = {10, "hans"};
-    struct subscriber sub2 = {20, "jakob"};
-    struct subscriber sub3 = {30, "marta"};
+    struct subscriber sub1 = {c1, "hans"};
+    struct subscriber sub2 = {c2, "jakob"};
+    struct subscriber sub3 = {c3, "marta"};
 
     ret = topic_add_subscriber(&ts, "stocks", &sub1);
     CU_ASSERT_EQUAL_FATAL(0, ret);
@@ -210,9 +214,9 @@ void test_topic_remove_subscriber() {
 
     list_init(&ts);
 
-    struct subscriber sub1 = {10, "hans"};
-    struct subscriber sub2 = {20, "jakob"};
-    struct subscriber sub3 = {30, "marta"};
+    struct subscriber sub1 = {c1, "hans"};
+    struct subscriber sub2 = {c2, "jakob"};
+    struct subscriber sub3 = {c3, "marta"};
     topic_add_subscriber(&ts, "stocks", &sub1);
     topic_add_subscriber(&ts, "stocks", &sub2);
     topic_add_subscriber(&ts, "bounds", &sub2);
@@ -247,7 +251,7 @@ void test_add_message_1() {
     struct message *msg;
     struct list *stats;
     struct msg_statistics *msgstats;
-    struct subscriber sub1 = {10, "hans"};
+    struct subscriber sub1 = {c1, "hans"};
     list_init(&topics);
     list_init(&messages);
 
@@ -275,8 +279,8 @@ void test_add_message_2() {
     struct message *msg;
     struct list *stats;
     struct msg_statistics *msgstats;
-    struct subscriber sub1 = {10, "hans"};
-    struct subscriber sub2 = {20, "jakob"};
+    struct subscriber sub1 = {c1, "hans"};
+    struct subscriber sub2 = {c2, "jakob"};
     list_init(&topics);
     list_init(&messages);
 
@@ -309,8 +313,8 @@ void test_add_message_3() {
     struct message *msg;
     struct list *stats;
     struct msg_statistics *msgstats;
-    struct subscriber sub1 = {10, "hans"};
-    struct subscriber sub2 = {20, "jakob"};
+    struct subscriber sub1 = {c1, "hans"};
+    struct subscriber sub2 = {c2, "jakob"};
     list_init(&topics);
     list_init(&messages);
 
@@ -362,8 +366,8 @@ void test_add_message_late_subscriber() {
     struct message *msg;
     struct list *stats;
     struct msg_statistics *msgstats;
-    struct subscriber sub1 = {10, "hans"};
-    struct subscriber sub2 = {20, "jakob"};
+    struct subscriber sub1 = {c1, "hans"};
+    struct subscriber sub2 = {c2, "jakob"};
     list_init(&topics);
     list_init(&messages);
 
@@ -433,7 +437,7 @@ void test_add_message_no_subscriber() {
     int ret;
     struct list topics;
     struct list messages;
-    struct subscriber sub1 = {10, "hans"};
+    struct subscriber sub1 = {c1, "hans"};
     list_init(&topics);
     list_init(&messages);
     // add and remove sub to create topic
@@ -448,8 +452,8 @@ void test_msg_remove_subscriber_first() {
     int ret;
     struct list topics;
     struct list messages;
-    struct subscriber sub1 = {10, "hans"};
-    struct subscriber sub2 = {20, "jakob"};
+    struct subscriber sub1 = {c1, "hans"};
+    struct subscriber sub2 = {c2, "jakob"};
     struct message *msg;
     struct msg_statistics *stat;
     list_init(&topics);
@@ -470,8 +474,8 @@ void test_msg_remove_subscriber_second() {
     int ret;
     struct list topics;
     struct list messages;
-    struct subscriber sub1 = {10, "hans"};
-    struct subscriber sub2 = {20, "jakob"};
+    struct subscriber sub1 = {c1, "hans"};
+    struct subscriber sub2 = {c2, "jakob"};
     struct message *msg;
     struct msg_statistics *stat;
     list_init(&topics);
@@ -492,7 +496,7 @@ void test_msg_remove_subscriber_last() {
     int ret;
     struct list topics;
     struct list messages;
-    struct subscriber sub1 = {10, "hans"};
+    struct subscriber sub1 = {c1, "hans"};
     struct message *msg;
 
     // one message
@@ -524,8 +528,8 @@ void test_msg_remove_subscriber_last() {
 void test_msg_remove_subscriber_not_subscribed() {
     struct list topics;
     struct list messages;
-    struct subscriber sub1 = {10, "hans"};
-    struct subscriber sub2 = {20, "jakob"};
+    struct subscriber sub1 = {c1, "hans"};
+    struct subscriber sub2 = {c2, "jakob"};
     list_init(&topics);
     list_init(&messages);
     topic_add_subscriber(&topics, "stocks", &sub1);

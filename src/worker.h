@@ -1,12 +1,13 @@
 #ifndef WORKER_HEADER
 #define WORKER_HEADER
 
+#include "socket.h"
 #include "stomp.h"
 
 /* params passed to the worker for each client */
 struct worker_params {
     /* the client to be handled */
-    int sockfd;
+    struct client client;
 
     /* global list of topics */
     struct list *topics;
@@ -16,15 +17,15 @@ struct worker_params {
 };
 
 /* send an error message to the client with the specified reason */
-int send_error(int clientfd, char *reason);
+int send_error(struct client client, char *reason);
 
 /* send receipt to client */
-int send_receipt(struct worker_params params);
+int send_receipt(struct client client);
 
 /* send connected message to client */
 int send_connected(struct worker_params params);
 
-/* process command send */
+/* add message sent by client to according topic */
 int process_send(struct worker_params params, struct stomp_command cmd);
 
 /* process command subscribe */

@@ -2,12 +2,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <string.h>
 
 #include "topic.h"
 #include "socket.h"
 #include "worker.h"
 
-int send_error(int sock, char *reason) {
+int send_error(struct client client, char *reason) {
     struct stomp_command respc;
     struct stomp_header header;
 
@@ -18,10 +19,10 @@ int send_error(int sock, char *reason) {
     respc.nheaders = 1;
     respc.content = NULL;
 
-    return socket_send_command(sock, respc);
+    return socket_send_command(client, respc);
 }
 
-int send_receipt(struct worker_params params) {
+int send_receipt(struct client client) {
     struct stomp_command respc;
 
     respc.name = "RECEIPT";
@@ -29,7 +30,7 @@ int send_receipt(struct worker_params params) {
     respc.nheaders = 0;
     respc.content = NULL;
 
-    return socket_send_command(params.sockfd, respc);
+    return socket_send_command(client, respc);
 }
 
 int send_connected(struct worker_params params) {
@@ -40,7 +41,7 @@ int send_connected(struct worker_params params) {
     respc.nheaders = 0;
     respc.content = NULL;
 
-    return socket_send_command(params.sockfd, respc);
+    return socket_send_command(params.client, respc);
 }
 
 int process_send(struct worker_params params, struct stomp_command cmd) {
@@ -54,7 +55,7 @@ int process_send(struct worker_params params, struct stomp_command cmd) {
     ret = topic_add_message(topics, messages, topic, content);
     if (ret != 0) {
         fprintf(stderr, "Error from topic_add_message: %d\n", ret);
-        ret = send_error(params.sockfd, "Failed to add message");
+        ret = send_error(params.client, "Failed to add message");
 
         if (ret != 0) fprintf(stderr, "Failed to send error\n");
 
@@ -75,7 +76,7 @@ int process_subscribe(struct worker_params params,
     ret = topic_add_subscriber(topics, topic, sub);
     if (ret != 0) {
         fprintf(stderr, "Error from topic_add_subscriber: %d\n", ret);
-        ret = send_error(params.sockfd, "Failed to add subscriber");
+        ret = send_error(params.client, "Failed to add subscriber");
 
         if (ret != 0) fprintf(stderr, "Failed to send error\n");
 
@@ -97,7 +98,7 @@ int process_disconnect(struct worker_params params,
     ret = topic_remove_subscriber(topics, sub);
     if (ret != 0) {
         fprintf(stderr, "Error from topic_remove_subscriber: %d\n", ret);
-        ret = send_error(params.sockfd,
+        ret = send_error(params.client,
             "Failed to remove subscriber from topic");
 
         if (ret != 0) fprintf(stderr, "Failed to send error\n");
@@ -108,7 +109,7 @@ int process_disconnect(struct worker_params params,
         ret = message_remove_subscriber(messages, sub);
         if (ret != 0) {
             fprintf(stderr, "Error from message_remove_subscriber: %d\n", ret);
-            ret = send_error(params.sockfd, "Failed to add subscriber");
+            ret = send_error(params.client, "Failed to add subscriber");
 
             if (ret != 0) fprintf(stderr, "Failed to send error\n");
 
@@ -116,9 +117,9 @@ int process_disconnect(struct worker_params params,
         } else {
             printf("Removed subscriber '%s' from message\n", sub->name);
 
-            ret = send_receipt(params);
+            ret = send_receipt(params.client);
             if (ret != 0) {
-                ret = send_error(params.sockfd, "Failed to send receipt");
+                ret = send_error(params.client, "Failed to send receipt");
 
                 if (ret != 0) fprintf(stderr, "Failed to send error\n");
                 
@@ -136,19 +137,19 @@ void handle_client(struct worker_params params) {
 
     connected = 0;
     while (1) {
-        ret = read_command(params.sockfd, &cmd);
+        ret = socket_read_command(params.client, &cmd);
         if (ret != 0) {
-            ret = send_error(params.sockfd, "Failed to parse");
+            ret = send_error(params.client, "Failed to parse");
             continue;
         }
 
         if (!connected) {
             if (strcmp("CONNECT", cmd.name) != 0) {
-                ret = send_error(params.sockfd, "Expected CONNECT");
+                ret = send_error(params.client, "Expected CONNECT");
                 continue;
             } else {
                 connected = 1;
-                sub.sockfd = params.sockfd;
+                sub.client = params.client;
                 sub.name = cmd.headers[0].val; // has only one header
                 ret = send_connected(params);
                 continue;
@@ -161,7 +162,7 @@ void handle_client(struct worker_params params) {
             } else if (strcmp("DISCONNECT", cmd.name) == 0) {
                 ret = process_disconnect(params, &sub);
             } else {
-                ret = send_error(params.sockfd, "Unexpected command");
+                ret = send_error(params.client, "Unexpected command");
                 fprintf(stderr, "Unexpected Command %s\n", cmd.name);
             }
                 

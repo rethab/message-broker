@@ -1,6 +1,8 @@
 #ifndef TOPIC_HEADER
 #define TOPIC_HEADER
 
+#include "socket.h"
+
 #define TOPIC_CREATION_FAILED -2
 #define TOPIC_NOT_FOUND       -3
 #define TOPIC_NO_SUBSCRIBERS  -4
@@ -8,8 +10,8 @@
 /* client interested in messages of a topic */
 struct subscriber {
 
-    /* file desriptor used for communication */
-    int sockfd;
+    /* client information */
+    struct client client;
 
     /* name of the subscriber, used at login */
     char *name;
