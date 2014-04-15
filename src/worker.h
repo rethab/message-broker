@@ -7,7 +7,7 @@
 /* params passed to the worker for each client */
 struct worker_params {
     /* the client to be handled */
-    struct client client;
+    struct client *client;
 
     /* global list of topics */
     struct list *topics;
@@ -17,10 +17,10 @@ struct worker_params {
 };
 
 /* send an error message to the client with the specified reason */
-int send_error(struct client client, char *reason);
+int send_error(struct client *client, char *reason);
 
 /* send receipt to client */
-int send_receipt(struct client client);
+int send_receipt(struct client *client);
 
 /* send connected message to client */
 int send_connected(struct worker_params params);

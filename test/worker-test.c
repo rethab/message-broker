@@ -22,7 +22,7 @@ void test_send_error() {
     client.sockfd = fds[1];
     client.mutex_w = &mutex;
 
-    ret = send_error(client, "test reason");
+    ret = send_error(&client, "test reason");
     CU_ASSERT_EQUAL_FATAL(0, ret);
 
     assert(read(fds[0], rawcmd, 32) > 0);
@@ -45,7 +45,7 @@ void test_send_receipt() {
     client.sockfd = fds[1];
     client.mutex_w = &mutex;
 
-    ret = send_receipt(client);
+    ret = send_receipt(&client);
     CU_ASSERT_EQUAL_FATAL(0, ret);
 
     assert(read(fds[0], rawcmd, 32) > 0);
@@ -61,13 +61,15 @@ void test_send_connected() {
     int fds[2]; // 0=read, 1=write
     struct worker_params params;
     struct client client;
-    params.client = client;
+    params.client = &client;
     char rawcmd[32];
 
     assert(pipe(fds) == 0);
     pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
     client.sockfd = fds[1];
     client.mutex_w = &mutex;
+
+    printf("ADdress in test: Lock: %p\n", &mutex);
 
     ret = send_connected(params);
     CU_ASSERT_EQUAL_FATAL(0, ret);
@@ -89,8 +91,7 @@ void test_process_send() {
     struct list messages;
     struct subscriber sub;
     struct message *msg;
-    struct list *stats;
-    struct msg_statistics *stat;
+    struct topic *topic;
 
     cmd.name = "SEND";
     header.key = "topic";
@@ -110,15 +111,17 @@ void test_process_send() {
     msg = messages.root->entry;
     CU_ASSERT_STRING_EQUAL_FATAL("price: 22.3", msg->content);
     CU_ASSERT_STRING_EQUAL_FATAL("stocks", msg->topicname);
-    stats = msg->stats;
-    stat = stats->root->entry;
-    check subscriber
 
+    topic = topics.root->entry;
+    CU_ASSERT_STRING_EQUAL_FATAL("stocks", topic->name);
 }
 
 
 void worker_test_suite() {
     CU_pSuite socketSuite = CU_add_suite("worker", NULL, NULL);
-    CU_add_test(socketSuite, "test_send_error", test_send_error);
+    //CU_add_test(socketSuite, "test_send_error", test_send_error);
+    CU_add_test(socketSuite, "test_send_connected", test_send_connected);
+    //CU_add_test(socketSuite, "test_send_receipt", test_send_receipt);
+    //CU_add_test(socketSuite, "test_process_send", test_process_send);
 
 }

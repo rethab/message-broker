@@ -11,7 +11,7 @@
 struct subscriber {
 
     /* client information */
-    struct client client;
+    struct client *client;
 
     /* name of the subscriber, used at login */
     char *name;

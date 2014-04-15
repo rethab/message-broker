@@ -27,9 +27,9 @@ struct client {
 /* reads a command from the socket. it reads until
  * it sees the null byte or the maximum buffer size
  * is reached */
-int socket_read_command(struct client client, struct stomp_command *cmd);
+int socket_read_command(struct client *client, struct stomp_command *cmd);
 
 /* sends a command to the client */
-int socket_send_command(struct client client, struct stomp_command cmd);
+int socket_send_command(struct client *client, struct stomp_command cmd);
 
 #endif

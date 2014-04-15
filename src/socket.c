@@ -10,7 +10,7 @@
 
 #define BUFSIZE 1024
 
-int socket_read_command(struct client client, struct stomp_command *cmd) {
+int socket_read_command(struct client *client, struct stomp_command *cmd) {
     int ret;
 
     int pos;
@@ -19,17 +19,17 @@ int socket_read_command(struct client client, struct stomp_command *cmd) {
 
 
     // accquire lock to read entire command
-    assert(pthread_mutex_lock(client.mutex_r) == 0);
+    assert(pthread_mutex_lock(client->mutex_r) == 0);
 
     pos = 0;
     while (pos < BUFSIZE) {
-        ret = read(client.sockfd, &c, 1); 
+        ret = read(client->sockfd, &c, 1); 
 
         // error
         if (ret != 1) {
 
             // release lock 
-            assert(pthread_mutex_unlock(client.mutex_r) == 0);
+            assert(pthread_mutex_unlock(client->mutex_r) == 0);
 
             fprintf(stderr, "read: %s\n", strerror(errno));
             return SOCKET_CLIENT_GONE;
@@ -44,7 +44,7 @@ int socket_read_command(struct client client, struct stomp_command *cmd) {
     }
 
     // release lock
-    assert(pthread_mutex_unlock(client.mutex_r) == 0);
+    assert(pthread_mutex_unlock(client->mutex_r) == 0);
 
     if (pos == BUFSIZE && buf[pos-1] != '\0') {
         return SOCKET_TOO_MUCH;
@@ -63,7 +63,7 @@ int socket_read_command(struct client client, struct stomp_command *cmd) {
     }
 }
 
-int socket_send_command(struct client client, struct stomp_command cmd) {
+int socket_send_command(struct client *client, struct stomp_command cmd) {
     int ret, resplen;
     char *resp;
 
@@ -78,12 +78,12 @@ int socket_send_command(struct client client, struct stomp_command cmd) {
     resplen = strlen(resp) + 1;
 
     // acquire lock
-    assert(pthread_mutex_lock(client.mutex_w) == 0);
+    assert(pthread_mutex_lock(client->mutex_w) == 0);
 
-    ret = write(client.sockfd, resp, resplen);
+    ret = write(client->sockfd, resp, resplen);
 
     // acquire lock
-    assert(pthread_mutex_unlock(client.mutex_w) == 0);
+    assert(pthread_mutex_unlock(client->mutex_w) == 0);
 
     free(resp);
     if (ret == -1) {

@@ -8,7 +8,7 @@
 #include "socket.h"
 #include "worker.h"
 
-int send_error(struct client client, char *reason) {
+int send_error(struct client *client, char *reason) {
     struct stomp_command respc;
     struct stomp_header header;
 
@@ -22,7 +22,7 @@ int send_error(struct client client, char *reason) {
     return socket_send_command(client, respc);
 }
 
-int send_receipt(struct client client) {
+int send_receipt(struct client *client) {
     struct stomp_command respc;
 
     respc.name = "RECEIPT";

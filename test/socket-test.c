@@ -24,7 +24,7 @@ void test_read_command() {
     client.mutex_r = &mutex;
 
     assert(write(fds[1], rawcmd, rawcmdlen) > 0);
-    ret = socket_read_command(client, &cmd);
+    ret = socket_read_command(&client, &cmd);
 
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_STRING_EQUAL_FATAL("CONNECT", cmd.name);
@@ -50,7 +50,7 @@ void test_read_command_fail() {
     client.mutex_r = &mutex;
 
     assert(write(fds[1], rawcmd, rawcmdlen) > 0);
-    ret = socket_read_command(client, &cmd);
+    ret = socket_read_command(&client, &cmd);
 
     CU_ASSERT(ret < 0); // failed to parse
     // mutex should be freed again
@@ -76,7 +76,7 @@ void test_read_command_invalid_socket() {
     close(fds[0]);
     close(fds[1]);
 
-    ret = socket_read_command(client, &cmd);
+    ret = socket_read_command(&client, &cmd);
 
     CU_ASSERT(ret < 0); // failed to parse
     // mutex should be freed again
@@ -102,7 +102,7 @@ void test_read_command_too_much() {
     client.mutex_r = &mutex;
 
     assert(write(fds[1], rawcmd, 1025) > 0);
-    ret = socket_read_command(client, &cmd);
+    ret = socket_read_command(&client, &cmd);
 
     CU_ASSERT_EQUAL_FATAL(SOCKET_TOO_MUCH, ret);
     // mutex should be freed again
@@ -129,7 +129,7 @@ void test_write_command() {
     cmd.nheaders = 0;
     cmd.content = NULL;
 
-    ret = socket_send_command(client, cmd);
+    ret = socket_send_command(&client, cmd);
     CU_ASSERT_EQUAL_FATAL(0, ret);
 
     read(fds[0], &rawcmd, 32);
@@ -161,7 +161,7 @@ void test_write_command_socket_closed() {
     close(fds[1]); // close socket
     close(fds[0]);
 
-    ret = socket_send_command(client, cmd);
+    ret = socket_send_command(&client, cmd);
     CU_ASSERT_EQUAL_FATAL(SOCKET_CLIENT_GONE, ret);
     // mutex should be freed again
     CU_ASSERT_EQUAL_FATAL(0, pthread_mutex_trylock(&mutex));
