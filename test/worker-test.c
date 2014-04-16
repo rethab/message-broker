@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <assert.h>
+#include <sys/socket.h>
+#include <pthread.h>
 
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
@@ -183,6 +184,46 @@ void test_process_disconnect() {
     CU_ASSERT_PTR_NULL(topic->subscribers->root);
 }
 
+void test_handle_client() {
+    struct worker_params params;
+    struct list topics;
+    struct list messages;
+    struct client client;
+    pthread_mutex_t mutex_w = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t mutex_r = PTHREAD_MUTEX_INITIALIZER;
+    int fds[2];
+
+    assert(0 == socketpair(AF_UNIX, SOCK_STREAM, 0, fds));
+    list_init(&messages);
+    list_init(&topics);
+    params.client = &client;
+    params.topics = &topics;
+    params.messages = &messages;
+    client.mutex_w = &mutex_w;
+    client.mutex_r = &mutex_r;
+    client.sockfd = fds[0];
+
+    char cmd1[] = "CONNECT\nlogin:foo\n\n";
+    char cmd2[] = "SUBSCRIBE\ndestination:stocks\n\n";
+    char cmd3[] = "SEND\ntopic:stocks\n\nprice: 22.3\n\n";
+    char cmd4[] = "DISCONNECT\n\n";
+
+    assert(0 < write(fds[1], cmd1, strlen(cmd1)+1));
+    assert(0 < write(fds[1], cmd2, strlen(cmd2)+1));
+    assert(0 < write(fds[1], cmd3, strlen(cmd3)+1));
+    assert(0 < write(fds[1], cmd4, strlen(cmd4)+1));
+    handle_client(params);
+
+    size_t resp1len = strlen("CONNECTED\n\n") + 1; // after CONNECT
+    char resp1[32]; 
+    size_t resp2len = strlen("RECEIPT\n\n") + 1; // after DISCONNECT
+    char resp2[32];
+    assert(0 < read(fds[1], resp1, resp1len));
+    assert(0 < read(fds[1], resp2, resp2len));
+    CU_ASSERT_STRING_EQUAL_FATAL("CONNECTED\n\n", resp1);
+    CU_ASSERT_STRING_EQUAL_FATAL("RECEIPT\n\n", resp2);
+}
+
 
 void worker_test_suite() {
     CU_pSuite socketSuite = CU_add_suite("worker", NULL, NULL);
@@ -194,5 +235,6 @@ void worker_test_suite() {
     CU_add_test(socketSuite, "test_send_connected", test_send_connected);
     CU_add_test(socketSuite, "test_send_receipt", test_send_receipt);
     CU_add_test(socketSuite, "test_send_error", test_send_error);
+    CU_add_test(socketSuite, "test_handle_client", test_handle_client);
 
 }

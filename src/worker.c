@@ -161,6 +161,7 @@ void handle_client(struct worker_params params) {
                 ret = process_subscribe(params, cmd, &sub);
             } else if (strcmp("DISCONNECT", cmd.name) == 0) {
                 ret = process_disconnect(params, &sub);
+                return;
             } else {
                 ret = send_error(params.client, "Unexpected command");
                 fprintf(stderr, "Unexpected Command %s\n", cmd.name);
