@@ -113,7 +113,7 @@ void test_read_command_too_much() {
     pthread_mutex_destroy(&mutex);
 }
 
-void test_write_command() {
+void test_send_command() {
     int ret;
     int fds[2]; // 0=read, 1=write
     struct client client;
@@ -143,7 +143,7 @@ void test_write_command() {
     pthread_mutex_destroy(&mutex);
 }
 
-void test_write_command_socket_closed() {
+void test_send_command_socket_closed() {
     int ret;
     int fds[2]; // 0=read, 1=write
     struct client client;
@@ -178,8 +178,8 @@ void socket_test_suite() {
         test_read_command_invalid_socket);
     CU_add_test(socketSuite, "test_read_command_too_much",
         test_read_command_too_much);
-    CU_add_test(socketSuite, "test_write_command_socket_closed",
-        test_write_command_socket_closed);
-    CU_add_test(socketSuite, "test_write_command", test_write_command);
+    CU_add_test(socketSuite, "test_send_command_socket_closed",
+        test_send_command_socket_closed);
+    CU_add_test(socketSuite, "test_send_command", test_send_command);
 
 }
