@@ -36,9 +36,9 @@
 2. ERROR:
     a. sent as reply in above scenarios
 3. RECEIPT:
-    a. removeme??
+    a. sent as reply in above scenarios
 4. CONNECTED:
-    a. removeme??
+    a. sent as reply in above scenarios
 
 (*) does it make sense to create a topic from the client
     upon sending? there will be no consumers, and we should
