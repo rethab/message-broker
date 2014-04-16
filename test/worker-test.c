@@ -12,6 +12,7 @@
 #include "../src/topic.h"
 
 void test_send_error() {
+
     int ret;
     int fds[2]; // 0=read, 1=write
     struct client client;
@@ -29,8 +30,8 @@ void test_send_error() {
     CU_ASSERT_STRING_EQUAL_FATAL(
         "ERROR\nmessage:test reason\n\n", rawcmd);
 
-    close(fds[0]);
-    close(fds[1]);
+    assert(0 == close(fds[0]));
+    assert(0 == close(fds[1]));
     pthread_mutex_destroy(&mutex);
 }
 
@@ -51,8 +52,8 @@ void test_send_receipt() {
     assert(read(fds[0], rawcmd, 32) > 0);
     CU_ASSERT_STRING_EQUAL_FATAL( "RECEIPT\n\n", rawcmd);
 
-    close(fds[0]);
-    close(fds[1]);
+    assert(0 == close(fds[0]));
+    assert(0 == close(fds[1]));
     pthread_mutex_destroy(&mutex);
 }
 
@@ -69,16 +70,14 @@ void test_send_connected() {
     client.sockfd = fds[1];
     client.mutex_w = &mutex;
 
-    printf("ADdress in test: Lock: %p\n", &mutex);
-
     ret = send_connected(params);
     CU_ASSERT_EQUAL_FATAL(0, ret);
 
     assert(read(fds[0], rawcmd, 32) > 0);
     CU_ASSERT_STRING_EQUAL_FATAL("CONNECTED\n\n", rawcmd);
 
-    close(fds[0]);
-    close(fds[1]);
+    assert(0 == close(fds[0]));
+    assert(0 == close(fds[1]));
     pthread_mutex_destroy(&mutex);
 }
 
@@ -119,9 +118,9 @@ void test_process_send() {
 
 void worker_test_suite() {
     CU_pSuite socketSuite = CU_add_suite("worker", NULL, NULL);
-    //CU_add_test(socketSuite, "test_send_error", test_send_error);
+    CU_add_test(socketSuite, "test_process_send", test_process_send);
+    CU_add_test(socketSuite, "test_send_error", test_send_error);
     CU_add_test(socketSuite, "test_send_connected", test_send_connected);
-    //CU_add_test(socketSuite, "test_send_receipt", test_send_receipt);
-    //CU_add_test(socketSuite, "test_process_send", test_process_send);
+    CU_add_test(socketSuite, "test_send_receipt", test_send_receipt);
 
 }

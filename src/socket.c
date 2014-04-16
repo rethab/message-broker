@@ -11,6 +11,7 @@
 #define BUFSIZE 1024
 
 int socket_read_command(struct client *client, struct stomp_command *cmd) {
+    printf("socket_read_command: %d\n", client->sockfd);
     int ret;
 
     int pos;
