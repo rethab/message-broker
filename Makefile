@@ -1,5 +1,5 @@
 CFLAGS=-Isrc -std=c99 -D_XOPEN_SOURCE=700 -Wall -lpthread 
-TEST_CFLAGS=-Itest -lcunit -g -rdynamic
+TEST_CFLAGS=-Itest -lcunit -g -rdynamic -ftest-coverage -fprofile-arcs -lgcov
 PROD_CFLAGS=-DNDEBUG
 
 broker: CFLAGS += $(PROD_CFLAGS)
