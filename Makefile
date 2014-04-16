@@ -14,6 +14,12 @@ test: CFLAGS += $(TEST_CFLAGS)
 test: clean topic stomp socket worker
 	gcc $(CFLAGS) -o test/main.o test/main.c src/topic.o src/stomp.o src/socket.o src/worker.o
 
+cover: test
+	test/main.o
+	lcov -c -d src -o coverage.info
+	lcov --remove coverage.info "/usr*" -o coverage.info
+	genhtml coverage.info -o coverage
+
 topic: src/topic.c
 	gcc -c $(CFLAGS) -o src/topic.o src/topic.c
 
@@ -27,7 +33,9 @@ worker: src/worker.c
 	gcc -c $(CFLAGS) -o src/worker.o src/worker.c
 
 clean:
-	rm -fv test/*.o
-	rm -fv src/*.o
-	rm -fv src/broker
-	rm -fv src/client
+	rm -fv {src,test}/*.o
+	rm -fv src/{broker,client}
+	rm -rfv coverage/
+	rm -fv coverage.info
+	rm -fv {src/,}*.gcda
+	rm -fv {src/,}*.gcno

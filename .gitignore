@@ -18,3 +18,7 @@
 *.app
 src/broker
 src/client
+*.gcda
+*.gcno
+coverage
+coverage.info
