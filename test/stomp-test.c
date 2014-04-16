@@ -245,6 +245,35 @@ void test_create_command_receipt() {
     CU_ASSERT_STRING_EQUAL_FATAL("RECEIPT\n\n", str);
 }
 
+void test_create_command_strcatbug() {
+    /** this demonstrates a bug in create_command_generic
+     * that was fixed in 3346752. The problem
+     * was that an assumption on the behavior of strcat
+     * was wrong, which caused it to only work
+     * if the memory returned by malloc had a zero
+     * byte at the beginning. Therefore, we first
+     * allocate some memory and set it to 1 and then
+     * free it, which makes it very likely to be returned
+     * later on and not be zero. only memory from the OS
+     * will be zeroed out, if possible memory is reused */
+    int *dummy = malloc(1024 * sizeof(int));
+    assert(dummy != NULL);
+    for (int i = 0; i < 1024; i++)
+        dummy[i] = 1;
+    free(dummy);
+
+    struct stomp_command cmd;
+
+    cmd.name = "RECEIPT";
+    cmd.headers = NULL;
+    cmd.content = NULL;
+    cmd.nheaders = 0;
+
+    char* str;
+    CU_ASSERT_EQUAL_FATAL(0, create_command(cmd, &str));
+    CU_ASSERT_STRING_EQUAL_FATAL("RECEIPT\n\n", str);
+}
+
 void test_strerror() {
     char buf[32];
     stomp_strerror(STOMP_MISSING_HEADER, buf);
@@ -293,6 +322,8 @@ void add_stomp_create_suite() {
         test_create_command_message);
     CU_add_test(createSuite, "test_create_command_receipt",
         test_create_command_receipt);
+    CU_add_test(createSuite, "test_create_command_strcatbug",
+        test_create_command_strcatbug);
     CU_add_test(createSuite, "test_strerror",
         test_strerror);
 }
