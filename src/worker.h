@@ -28,11 +28,11 @@ int send_connected(struct worker_params params);
 /* add message sent by client to according topic */
 int process_send(struct worker_params params, struct stomp_command cmd);
 
-/* process command subscribe */
+/* adds client to topic */
 int process_subscribe(struct worker_params params,
     struct stomp_command cmd, struct subscriber *sub);
 
-/* process command disconnect */
+/* removes client from messages and topics */
 int process_disconnect(struct worker_params params,
     struct subscriber *sub);
 
