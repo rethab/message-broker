@@ -1,12 +1,13 @@
 CFLAGS=-Isrc -std=c99 -D_XOPEN_SOURCE=700 -Wall -lpthread 
 TEST_CFLAGS=-Itest -lcunit -g -rdynamic
+PROD_CFLAGS=-DNDEBUG
 
-all: broker
+broker: CFLAGS += $(PROD_CFLAGS)
+broker: topic stomp worker socket
+	gcc $(CFLAGS) -o src/broker src/broker.c src/stomp.o src/topic.o src/worker.o src/socket.o
 
-broker: src/broker.c topic stomp
-	gcc $(CFLAGS) -o src/broker src/broker.c src/stomp.o src/topic.o
-
-client: src/client.c stomp
+client: CFLAGS += $(PROD_CFLAGS)
+client: stomp
 	gcc $(CFLAGS) -o src/client src/client.c src/stomp.o 
 
 test: CFLAGS += $(TEST_CFLAGS)
