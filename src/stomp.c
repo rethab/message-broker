@@ -212,7 +212,6 @@ static int create_command_generic(struct stomp_command cmd,
         char **str) {
     int i;
     size_t len;
-    char *dst;
 
     // length calc
     len = 0;
@@ -232,40 +231,35 @@ static int create_command_generic(struct stomp_command cmd,
     len += 1; // \0
 
     // memory for string
-    *str = malloc(sizeof(char *) * len); // MALLOC
+    *str = malloc(sizeof(char) * len); // MALLOC
+
+    // strcat appends to the first parameter
+    // by removing the first zero byte
+    // and at the end appending a zero byte
+    (*str)[0] = '\0';
 
     // string construction, always reset dst to beginning
     // of next token
-    dst = strcat(*str, cmd.name);
-    dst = strcat(dst, "\n");
-    dst += strlen(cmd.name + 1); // name\n
+    strcat(*str, cmd.name);
+    strcat(*str, "\n");
     for (i = 0; i < cmd.nheaders; i++) {
-        dst = strcat(dst, cmd.headers[i].key);
-        dst += strlen(cmd.headers[i].key);
+        strcat(*str, cmd.headers[i].key);
 
-        dst = strcat(dst, ":");
-        dst += 1;
+        strcat(*str, ":");
 
-        dst = strcat(dst, cmd.headers[i].val);
-        dst += strlen(cmd.headers[i].val);
+        strcat(*str, cmd.headers[i].val);
     }
     if (cmd.nheaders != 0) {
-        dst = strcat(dst, "\n\n");
-        dst += 2;
+        strcat(*str, "\n\n");
     }
     if (cmd.content != NULL) {
-        dst = strcat(dst, cmd.content);
-        dst += strlen(cmd.content);    
+        strcat(*str, cmd.content);
 
-        dst = strcat(dst, "\n\n");
-        dst += 2;
+        strcat(*str, "\n\n");
     }
     if (cmd.nheaders == 0 && cmd.content == NULL) {
-        dst = strcat(dst, "\n");    
-        dst += 1;
+        strcat(*str, "\n");    
     }
-
-    dst = '\0';
     return 0;
 }
 
