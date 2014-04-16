@@ -1,5 +1,5 @@
-CFLAGS=-Isrc -std=c99 -D_XOPEN_SOURCE=700 -Wall
-TEST_CFLAGS=-Itest -lcunit -lpthread -g -rdynamic
+CFLAGS=-Isrc -std=c99 -D_XOPEN_SOURCE=700 -Wall -lpthread 
+TEST_CFLAGS=-Itest -lcunit -g -rdynamic
 
 all: broker
 
@@ -9,8 +9,9 @@ broker: src/broker.c topic stomp
 client: src/client.c stomp
 	gcc $(CFLAGS) -o src/client src/client.c src/stomp.o 
 
-test: topic stomp socket worker
-	gcc $(CFLAGS) $(TEST_CFLAGS) -o test/main.o test/main.c src/topic.o src/stomp.o src/socket.o src/worker.o
+test: CFLAGS += $(TEST_CFLAGS)
+test: clean topic stomp socket worker
+	gcc $(CFLAGS) -o test/main.o test/main.c src/topic.o src/stomp.o src/socket.o src/worker.o
 
 topic: src/topic.c
 	gcc -c $(CFLAGS) -o src/topic.o src/topic.c
