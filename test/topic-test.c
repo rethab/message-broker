@@ -539,6 +539,22 @@ void test_msg_remove_subscriber_not_subscribed() {
     CU_ASSERT_EQUAL_FATAL(0, ret);
 }
 
+void test_topic_strerror() {
+    char buf[32];
+    topic_strerror(TOPIC_CREATION_FAILED, buf);
+    CU_ASSERT_STRING_EQUAL_FATAL("TOPIC_CREATION_FAILED", buf);
+
+    topic_strerror(TOPIC_NOT_FOUND, buf);
+    CU_ASSERT_STRING_EQUAL_FATAL("TOPIC_NOT_FOUND", buf);
+
+    topic_strerror(TOPIC_NO_SUBSCRIBERS, buf);
+    CU_ASSERT_STRING_EQUAL_FATAL("TOPIC_NO_SUBSCRIBERS", buf);
+
+    topic_strerror(-1, buf);
+    CU_ASSERT_STRING_EQUAL_FATAL("UNKNOWN_ERROR", buf);
+
+}
+
 void topic_add_list_suite() {
     CU_pSuite listSuite = CU_add_suite("list", NULL, NULL);
     CU_add_test(listSuite, "test_add_remove_list",
@@ -569,4 +585,6 @@ void topic_add_topic_suite() {
         test_msg_remove_subscriber_last);
     CU_add_test(topicSuite, "test_msg_remove_subscriber_not_subscribed",
         test_msg_remove_subscriber_not_subscribed);
+    CU_add_test(topicSuite, "test_topic_strerror",
+        test_topic_strerror);
 }
