@@ -54,7 +54,10 @@ int process_send(struct worker_params params, struct stomp_command cmd) {
 
     ret = topic_add_message(topics, messages, topic, content);
     if (ret != 0) {
-        fprintf(stderr, "Error from topic_add_message: %d\n", ret);
+        char errmsg[32];
+        topic_strerror(ret, errmsg);
+        fprintf(stderr,
+            "Error from topic_add_message: %s (%d)\n", errmsg, ret);
         ret = send_error(params.client, "Failed to add message");
 
         if (ret != 0) fprintf(stderr, "Failed to send error\n");
