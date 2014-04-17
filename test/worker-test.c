@@ -116,6 +116,44 @@ void test_process_send() {
     CU_ASSERT_STRING_EQUAL_FATAL("stocks", topic->name);
 }
 
+void test_process_send_no_subscriber() {
+    int ret;
+    struct worker_params params;
+    struct stomp_command cmd;
+    struct stomp_header header;
+    struct list topics;
+    struct list messages;
+    struct client client;
+    pthread_mutex_t mutex_w = PTHREAD_MUTEX_INITIALIZER;
+    int fds[2];
+    char resp[64];
+
+    cmd.name = "SEND";
+    header.key = "topic";
+    header.val = "stocks";
+    cmd.headers = &header;
+    cmd.nheaders = 1;
+    cmd.content = "price: 22.3";
+    list_init(&topics);
+    params.topics = &topics;
+    list_init(&messages);
+    params.messages = &messages;
+    assert(pipe(fds) == 0);
+    params.client = &client;
+    client.sockfd = fds[1];
+    client.mutex_w = &mutex_w;
+
+    ret = process_send(params, cmd);
+
+    CU_ASSERT_EQUAL_FATAL(-1, ret);
+    assert(0 < read(fds[0], resp, 64));
+    CU_ASSERT_STRING_EQUAL_FATAL("ERROR\nmessage:Failed to add message\n\n", resp);
+
+    assert(close(fds[0]) == 0);
+    assert(close(fds[1]) == 0);
+    pthread_mutex_destroy(&mutex_w);
+}
+
 void test_process_subscribe() {
     int ret;
     struct worker_params params;
@@ -182,6 +220,32 @@ void test_process_disconnect() {
     topic = topics.root->entry;
     CU_ASSERT_STRING_EQUAL_FATAL("stocks", topic->name);
     CU_ASSERT_PTR_NULL(topic->subscribers->root);
+    pthread_mutex_destroy(&mutex);
+}
+
+void test_process_disconnect_not_subscribed() {
+    int ret;
+    struct worker_params params;
+    struct list topics;
+    struct list messages;
+    struct subscriber sub;
+    struct client client;
+    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+    sub.name = "X2Y";
+
+    list_init(&topics);
+    params.topics = &topics;
+    list_init(&messages);
+    client.mutex_w = &mutex;
+    params.messages = &messages;
+    params.client = &client;
+
+    ret = process_disconnect(params, &sub);
+
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    pthread_mutex_destroy(&mutex);
 }
 
 void test_handle_client() {
@@ -222,19 +286,23 @@ void test_handle_client() {
     assert(0 < read(fds[1], resp2, resp2len));
     CU_ASSERT_STRING_EQUAL_FATAL("CONNECTED\n\n", resp1);
     CU_ASSERT_STRING_EQUAL_FATAL("RECEIPT\n\n", resp2);
+    pthread_mutex_destroy(&mutex_w);
+    pthread_mutex_destroy(&mutex_r);
 }
 
 
 void worker_test_suite() {
     CU_pSuite socketSuite = CU_add_suite("worker", NULL, NULL);
     CU_add_test(socketSuite, "test_process_send", test_process_send);
+    CU_add_test(socketSuite, "test_process_send_no_subscriber", test_process_send_no_subscriber);
     CU_add_test(socketSuite, "test_process_subscribe",
         test_process_subscribe);
     CU_add_test(socketSuite, "test_process_disconnect",
         test_process_disconnect);
+    CU_add_test(socketSuite, "test_process_disconnect_not_subscribed",
+        test_process_disconnect_not_subscribed);
     CU_add_test(socketSuite, "test_send_connected", test_send_connected);
     CU_add_test(socketSuite, "test_send_receipt", test_send_receipt);
     CU_add_test(socketSuite, "test_send_error", test_send_error);
     CU_add_test(socketSuite, "test_handle_client", test_handle_client);
-
 }
