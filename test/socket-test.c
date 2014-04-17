@@ -19,21 +19,18 @@ void test_read_command() {
     size_t rawcmdlen = strlen(rawcmd) + 1;
 
     assert(pipe(fds) == 0);
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    client_init(&client);
     client.sockfd = fds[0];
-    client.mutex_r = &mutex;
 
     assert(write(fds[1], rawcmd, rawcmdlen) > 0);
     ret = socket_read_command(&client, &cmd);
 
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_STRING_EQUAL_FATAL("CONNECT", cmd.name);
-    // mutex should be freed again
-    CU_ASSERT_EQUAL_FATAL(0, pthread_mutex_trylock(&mutex));
 
     close(fds[0]);
     close(fds[1]);
-    pthread_mutex_destroy(&mutex);
+    client_destroy(&client);
 }
 
 void test_read_command_fail() {
@@ -45,20 +42,17 @@ void test_read_command_fail() {
     size_t rawcmdlen = strlen(rawcmd) + 1;
 
     assert(pipe(fds) == 0);
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    client_init(&client);
     client.sockfd = fds[0];
-    client.mutex_r = &mutex;
 
     assert(write(fds[1], rawcmd, rawcmdlen) > 0);
     ret = socket_read_command(&client, &cmd);
 
     CU_ASSERT(ret < 0); // failed to parse
-    // mutex should be freed again
-    CU_ASSERT_EQUAL_FATAL(0, pthread_mutex_trylock(&mutex));
 
     close(fds[0]);
     close(fds[1]);
-    pthread_mutex_destroy(&mutex);
+    client_destroy(&client);
 }
 
 void test_read_command_invalid_socket() {
@@ -68,9 +62,8 @@ void test_read_command_invalid_socket() {
     struct stomp_command cmd;
 
     assert(pipe(fds) == 0);
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    client_init(&client);
     client.sockfd = fds[0];
-    client.mutex_r = &mutex;
 
     // close both
     close(fds[0]);
@@ -79,10 +72,31 @@ void test_read_command_invalid_socket() {
     ret = socket_read_command(&client, &cmd);
 
     CU_ASSERT(ret < 0); // failed to parse
-    // mutex should be freed again
-    CU_ASSERT_EQUAL_FATAL(0, pthread_mutex_trylock(&mutex));
+    CU_ASSERT_EQUAL_FATAL(1, client.dead);
 
-    pthread_mutex_destroy(&mutex);
+    client_destroy(&client);
+}
+
+void test_read_or_write_to_dead_client() {
+    int ret;
+    struct client client;
+    struct stomp_command cmd;
+    cmd.name = "RECEIPT";
+    cmd.nheaders = 0;
+    cmd.content = NULL;
+
+    client_init(&client);
+    client.dead = 1;
+
+    // cannot engage in necromantic activities
+    ret = socket_read_command(&client, &cmd);
+    CU_ASSERT_EQUAL_FATAL(SOCKET_NECROMANCE, ret);
+
+    // cannot engage in necromantic activities
+    ret = socket_send_command(&client, cmd);
+    CU_ASSERT_EQUAL_FATAL(SOCKET_NECROMANCE, ret);
+
+    client_destroy(&client);
 }
 
 void test_read_command_too_much() {
@@ -97,20 +111,17 @@ void test_read_command_too_much() {
     rawcmd[1024] = '\0';
 
     assert(pipe(fds) == 0);
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    client_init(&client);
     client.sockfd = fds[0];
-    client.mutex_r = &mutex;
 
     assert(write(fds[1], rawcmd, 1025) > 0);
     ret = socket_read_command(&client, &cmd);
 
     CU_ASSERT_EQUAL_FATAL(SOCKET_TOO_MUCH, ret);
-    // mutex should be freed again
-    CU_ASSERT_EQUAL_FATAL(0, pthread_mutex_trylock(&mutex));
 
     close(fds[0]);
     close(fds[1]);
-    pthread_mutex_destroy(&mutex);
+    client_destroy(&client);
 }
 
 void test_send_command() {
@@ -121,9 +132,8 @@ void test_send_command() {
     char rawcmd[32];
 
     assert(pipe(fds) == 0);
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    client_init(&client);
     client.sockfd = fds[1];
-    client.mutex_w = &mutex;
     cmd.name = "RECEIPT";
     cmd.headers = NULL;
     cmd.nheaders = 0;
@@ -135,12 +145,9 @@ void test_send_command() {
     read(fds[0], &rawcmd, 32);
     CU_ASSERT_STRING_EQUAL_FATAL("RECEIPT\n\n", rawcmd);
 
-    // mutex should be freed again
-    CU_ASSERT_EQUAL_FATAL(0, pthread_mutex_trylock(&mutex));
-
     close(fds[0]);
     close(fds[1]);
-    pthread_mutex_destroy(&mutex);
+    client_destroy(&client);
 }
 
 void test_send_command_socket_closed() {
@@ -150,23 +157,20 @@ void test_send_command_socket_closed() {
     struct stomp_command cmd;
 
     assert(pipe(fds) == 0);
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    client_init(&client);
     client.sockfd = fds[1];
-    client.mutex_w = &mutex;
     cmd.name = "RECEIPT";
     cmd.headers = NULL;
     cmd.nheaders = 0;
     cmd.content = NULL;
 
-    close(fds[1]); // close socket
-    close(fds[0]);
+    assert(0 == close(fds[1])); // close socket
+    assert(0 == close(fds[0]));
 
     ret = socket_send_command(&client, cmd);
     CU_ASSERT_EQUAL_FATAL(SOCKET_CLIENT_GONE, ret);
-    // mutex should be freed again
-    CU_ASSERT_EQUAL_FATAL(0, pthread_mutex_trylock(&mutex));
 
-    pthread_mutex_destroy(&mutex);
+    client_destroy(&client);
 }
 
 
@@ -174,6 +178,7 @@ void socket_test_suite() {
     CU_pSuite socketSuite = CU_add_suite("socket", NULL, NULL);
     CU_add_test(socketSuite, "test_read_command", test_read_command);
     CU_add_test(socketSuite, "test_read_command_fail", test_read_command_fail);
+    CU_add_test(socketSuite, "test_read_or_write_to_dead_client", test_read_or_write_to_dead_client);
     CU_add_test(socketSuite, "test_read_command_invalid_socket",
         test_read_command_invalid_socket);
     CU_add_test(socketSuite, "test_read_command_too_much",

@@ -20,9 +20,8 @@ void test_send_error() {
     char rawcmd[32];
 
     assert(pipe(fds) == 0);
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    client_init(&client);
     client.sockfd = fds[1];
-    client.mutex_w = &mutex;
 
     ret = send_error(&client, "test reason");
     CU_ASSERT_EQUAL_FATAL(0, ret);
@@ -33,7 +32,7 @@ void test_send_error() {
 
     assert(0 == close(fds[0]));
     assert(0 == close(fds[1]));
-    pthread_mutex_destroy(&mutex);
+    client_destroy(&client);
 }
 
 void test_send_receipt() {
@@ -43,9 +42,8 @@ void test_send_receipt() {
     char rawcmd[32];
 
     assert(pipe(fds) == 0);
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    client_init(&client);
     client.sockfd = fds[1];
-    client.mutex_w = &mutex;
 
     ret = send_receipt(&client);
     CU_ASSERT_EQUAL_FATAL(0, ret);
@@ -55,7 +53,7 @@ void test_send_receipt() {
 
     assert(0 == close(fds[0]));
     assert(0 == close(fds[1]));
-    pthread_mutex_destroy(&mutex);
+    client_destroy(&client);
 }
 
 void test_send_connected() {
@@ -67,9 +65,8 @@ void test_send_connected() {
     char rawcmd[32];
 
     assert(pipe(fds) == 0);
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    client_init(&client);
     client.sockfd = fds[1];
-    client.mutex_w = &mutex;
 
     ret = send_connected(params);
     CU_ASSERT_EQUAL_FATAL(0, ret);
@@ -79,7 +76,7 @@ void test_send_connected() {
 
     assert(0 == close(fds[0]));
     assert(0 == close(fds[1]));
-    pthread_mutex_destroy(&mutex);
+    client_destroy(&client);
 }
 
 void test_process_send() {
@@ -124,7 +121,6 @@ void test_process_send_no_subscriber() {
     struct list topics;
     struct list messages;
     struct client client;
-    pthread_mutex_t mutex_w = PTHREAD_MUTEX_INITIALIZER;
     int fds[2];
     char resp[64];
 
@@ -140,8 +136,8 @@ void test_process_send_no_subscriber() {
     params.messages = &messages;
     assert(pipe(fds) == 0);
     params.client = &client;
+    client_init(&client);
     client.sockfd = fds[1];
-    client.mutex_w = &mutex_w;
 
     ret = process_send(params, cmd);
 
@@ -151,7 +147,7 @@ void test_process_send_no_subscriber() {
 
     assert(close(fds[0]) == 0);
     assert(close(fds[1]) == 0);
-    pthread_mutex_destroy(&mutex_w);
+    client_destroy(&client);
 }
 
 void test_process_subscribe() {
@@ -197,15 +193,14 @@ void test_process_disconnect() {
     struct subscriber sub;
     struct topic *topic;
     struct client client;
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
     sub.name = "X2Y";
 
     list_init(&topics);
     params.topics = &topics;
     list_init(&messages);
-    client.mutex_w = &mutex;
     params.messages = &messages;
+    client_init(&client);
     params.client = &client;
 
     topic_add_subscriber(&topics, "stocks", &sub);
@@ -214,13 +209,12 @@ void test_process_disconnect() {
     ret = process_disconnect(params, &sub);
 
     CU_ASSERT_EQUAL_FATAL(0, ret);
-    CU_ASSERT_PTR_NULL(messages.root);
 
     // topic is not deleted
     topic = topics.root->entry;
     CU_ASSERT_STRING_EQUAL_FATAL("stocks", topic->name);
     CU_ASSERT_PTR_NULL(topic->subscribers->root);
-    pthread_mutex_destroy(&mutex);
+    client_destroy(&client);
 }
 
 void test_process_disconnect_not_subscribed() {
@@ -230,14 +224,13 @@ void test_process_disconnect_not_subscribed() {
     struct list messages;
     struct subscriber sub;
     struct client client;
-    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
     sub.name = "X2Y";
 
     list_init(&topics);
     params.topics = &topics;
     list_init(&messages);
-    client.mutex_w = &mutex;
+    client_init(&client);
     params.messages = &messages;
     params.client = &client;
 
@@ -245,7 +238,7 @@ void test_process_disconnect_not_subscribed() {
 
     CU_ASSERT_EQUAL_FATAL(0, ret);
 
-    pthread_mutex_destroy(&mutex);
+    client_destroy(&client);
 }
 
 void test_handle_client() {
@@ -253,8 +246,6 @@ void test_handle_client() {
     struct list topics;
     struct list messages;
     struct client client;
-    pthread_mutex_t mutex_w = PTHREAD_MUTEX_INITIALIZER;
-    pthread_mutex_t mutex_r = PTHREAD_MUTEX_INITIALIZER;
     int fds[2];
 
     assert(0 == socketpair(AF_UNIX, SOCK_STREAM, 0, fds));
@@ -263,8 +254,7 @@ void test_handle_client() {
     params.client = &client;
     params.topics = &topics;
     params.messages = &messages;
-    client.mutex_w = &mutex_w;
-    client.mutex_r = &mutex_r;
+    client_init(&client);
     client.sockfd = fds[0];
 
     char cmd1[] = "CONNECT\nlogin:foo\n\n";
@@ -286,8 +276,7 @@ void test_handle_client() {
     assert(0 < read(fds[1], resp2, resp2len));
     CU_ASSERT_STRING_EQUAL_FATAL("CONNECTED\n\n", resp1);
     CU_ASSERT_STRING_EQUAL_FATAL("RECEIPT\n\n", resp2);
-    pthread_mutex_destroy(&mutex_w);
-    pthread_mutex_destroy(&mutex_r);
+    client_destroy(&client);
 }
 
 

@@ -2,11 +2,37 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <pthread.h>
 
 #include "topic.h"
 
 int list_init(struct list *list) {
+
+    int ret;
+
+    pthread_rwlock_t *rwlock = malloc(sizeof(pthread_rwlock_t));
+    assert(rwlock != NULL);
+    ret = pthread_rwlock_init(rwlock, NULL);
+    assert(ret == 0);
+    list->listrwlock = rwlock;
+
     list->root = NULL;
+
+    return 0;
+}
+
+int list_destroy(struct list *list) {
+
+    int ret;
+    
+    assert(list->root == NULL);
+
+    ret = pthread_rwlock_destroy(list->listrwlock);
+    assert(ret == 0);
+    free(list->listrwlock);
+
+    list->root = NULL;
+
     return 0;
 }
 
@@ -71,6 +97,8 @@ int list_remove(struct list *list, void *entry) {
     return list_remove_generic(list, list_cmp_same_ref, entry);
 }
 
+/* at least read lock for list of topics must be held by 
+ * the funciton calling this function */
 static struct topic *find_topic(struct list *topics, char *name) {
     struct node *cur = topics->root;
     while (cur != NULL) {
@@ -103,66 +131,207 @@ static struct topic *create_new_topic(struct list *topics, char *name) {
 
 int topic_add_subscriber(struct list *topics, char *name,
                 struct subscriber *subscriber) {
-    struct topic *topic = find_topic(topics, name);
-    if (topic == NULL) {
-        topic = create_new_topic(topics, name);
-        if (topic == NULL) return TOPIC_CREATION_FAILED;
+
+    int ret; // return values from other functions
+    int val = 0; // return value for this function
+    struct topic *topic;
+
+    /* first try with readlock if the
+     * topic exists. this will be faster in most
+     * scenarios. if it doesn't exist, create it
+     * with the write lock 
+     */
+
+    // acquire read lock for topics list
+    ret = pthread_rwlock_tryrdlock(topics->listrwlock);
+    assert(ret == 0);
+
+
+    topic = find_topic(topics, name);
+
+    if (topic != NULL) {
+
+        /* we are still holding the read lock for the
+         * topics list, which is enough to add to the
+         * subscribers list
+         */
+
+        // acquire subscribers list write lock
+        ret = pthread_rwlock_wrlock(topic->subscribers->listrwlock);
+        assert(ret == 0);
+
+        val = list_add(topic->subscribers, subscriber);
+
+        // release subscribers list write lock
+        ret = pthread_rwlock_unlock(topic->subscribers->listrwlock);
+        assert(ret == 0);
+
+        // release read lock for topics list
+        ret = pthread_rwlock_unlock(topics->listrwlock);
+        assert(ret == 0);
+    } else {
+
+        /* topic does not exist --> release
+        * readlock and acquire write lock for creation.
+        * then check again whether it exists.
+        */
+
+        // release topics list read lock
+        ret = pthread_rwlock_unlock(topics->listrwlock);
+        assert(ret == 0);
+
+        // acquire topics list write lock
+        ret = pthread_rwlock_wrlock(topics->listrwlock);
+        assert(ret == 0);
+
+        // check existence again
+        topic = find_topic(topics, name);
+
+        if (topic == NULL) {
+            topic = create_new_topic(topics, name);
+        }
+
+        if (topic == NULL) {
+             val = TOPIC_CREATION_FAILED;
+        } else {
+
+            // acquire subscribers list write lock
+            ret = pthread_rwlock_wrlock(topic->subscribers->listrwlock);
+            assert(ret == 0);
+
+            val = list_add(topic->subscribers, subscriber);
+
+            // release subscribers list write lock
+            ret = pthread_rwlock_unlock(topic->subscribers->listrwlock);
+            assert(ret == 0);
+        }
+
+        // release topics list write lock
+        ret = pthread_rwlock_unlock(topics->listrwlock);
+        assert(ret == 0);
     }
-    return list_add(topic->subscribers, subscriber);
+
+    return val;
 }
 
 int topic_remove_subscriber(struct list *topics,
             struct subscriber *subscriber) {
-    int ret;
+
+    int ret; // return value from other functions
+    int val = 0; // return value from this function
+
+    // acquire read lock of topics
+    ret = pthread_rwlock_rdlock(topics->listrwlock);
+    assert(ret == 0);
+
     struct node *cur = topics->root;
     while (cur != NULL) {
         struct topic *topic = cur->entry;
-        ret = list_remove(topic->subscribers, subscriber);
-        if (ret == LIST_NOT_FOUND); // ok
-        else if (ret < 0) return ret;
 
-        cur = cur->next;
-    }
-    return 0;
-}
+        // acquire write lock of subscribers
+        ret = pthread_rwlock_wrlock(topic->subscribers->listrwlock);
+        assert(ret == 0);
 
-int topic_add_message(struct list *topics, struct list *messages,
-        char *topicname, char *content){
+        val = list_remove(topic->subscribers, subscriber);
 
-    struct topic *topic = find_topic(topics, topicname);
-    if (topic == NULL) return TOPIC_NOT_FOUND;
-    if (list_empty(topic->subscribers)) return TOPIC_NO_SUBSCRIBERS;
+        // release write lock of subscribers
+        ret = pthread_rwlock_unlock(topic->subscribers->listrwlock);
+        assert(ret == 0);
 
-    // message
-    struct message *msg = malloc(sizeof(struct message));
-    assert(msg != NULL);
-    msg->content = strdup(content);
-    msg->topicname = strdup(topicname);
-    msg->stats = malloc(sizeof(struct list));
-    list_init(msg->stats);
-    assert(msg->stats != NULL);
-
-    // statistics, subs from topic
-    struct node *cur = topic->subscribers->root;
-    while (cur != NULL) {
-        struct subscriber *sub = cur->entry;
-        struct msg_statistics *stat = malloc(sizeof(struct msg_statistics));
-        assert(stat != NULL);
-        stat->last_fail = 0;
-        stat->nattempts = 0;
-        stat->subscriber = sub;
-        int ret = list_add(msg->stats, stat);
-        if (ret != 0) {
-            free(stat);
-            free(msg->stats);
-            free(msg);
-            return ret;
+        if (val == LIST_NOT_FOUND) {
+            // ok
+            val = 0; // reset it would otherwise be returned
+        } else if (val < 0)  {
+            // something went seriously wrong
+            break; // exit while loop
         }
 
         cur = cur->next;
     }
 
-    return list_add(messages, msg);
+    // release read lock of topics
+    ret = pthread_rwlock_unlock(topics->listrwlock);
+    assert(ret == 0);
+
+    return val;
+}
+
+int topic_add_message(struct list *topics, struct list *messages,
+        char *topicname, char *content){
+
+    int ret; // to check other methods return values
+    int val = 0; // this return value
+    struct topic *topic;
+
+    // acquire topics list lock
+    ret = pthread_rwlock_rdlock(topics->listrwlock);
+    assert(ret == 0);
+
+    topic = find_topic(topics, topicname);
+    if (topic == NULL) {
+        val = TOPIC_NOT_FOUND;
+    } else {
+        // acquire subscribers list readlock
+        ret = pthread_rwlock_rdlock(topic->subscribers->listrwlock);
+        assert(ret == 0);
+
+        if (list_empty(topic->subscribers)) {
+            val = TOPIC_NO_SUBSCRIBERS;
+        }
+        
+        // release subscribers list readlock
+        ret = pthread_rwlock_unlock(topic->subscribers->listrwlock);
+        assert(ret == 0);
+    }
+
+    // topics exists with subscribers, proceed regularly
+    if (val == 0) {
+        // message
+        struct message *msg = malloc(sizeof(struct message));
+        assert(msg != NULL);
+        msg->content = strdup(content);
+        msg->topicname = strdup(topicname);
+        msg->stats = malloc(sizeof(struct list));
+        list_init(msg->stats);
+        assert(msg->stats != NULL);
+
+        // statistics, subs from topic
+        struct node *cur = topic->subscribers->root;
+        while (cur != NULL) {
+            struct subscriber *sub = cur->entry;
+            struct msg_statistics *stat =
+                malloc(sizeof(struct msg_statistics));
+            assert(stat != NULL);
+            stat->last_fail = 0;
+            stat->nattempts = 0;
+            stat->subscriber = sub;
+            int ret = list_add(msg->stats, stat);
+            if (ret != 0) {
+                free(stat);
+                free(msg->stats);
+                free(msg);
+                return ret;
+            }
+
+            cur = cur->next;
+        }
+
+        // acquire write lock for message list
+        ret = pthread_rwlock_wrlock(messages->listrwlock);
+        assert(ret == 0);
+
+        val = list_add(messages, msg);
+
+        // release write lock for messages list
+        ret = pthread_rwlock_unlock(messages->listrwlock);
+        assert(ret == 0);
+    }
+
+    // release topics list readlock
+    ret = pthread_rwlock_unlock(topics->listrwlock);
+    assert(ret == 0);
+
+    return val;
 }
 
 static int same_subscriber(const void *a, const void *b) {
@@ -173,41 +342,45 @@ static int same_subscriber(const void *a, const void *b) {
 
 int message_remove_subscriber(struct list *messages,
         struct subscriber *subscriber) {
-    int ret;
-
-    struct list emptymsgs;
-    list_init(&emptymsgs);
+    int ret; // return value from other functions
+    int val = 0; // return value from this function
 
     // to compare against
     struct msg_statistics stat;
     stat.subscriber = subscriber;
 
+    // acquire lock of message list
+    ret = pthread_rwlock_rdlock(messages->listrwlock);
+    assert(ret == 0);
+
     struct node *cur = messages->root;
     for (;cur != NULL; cur = cur->next) {
         struct message *msg = cur->entry;
-        ret = list_remove_generic(msg->stats, same_subscriber, &stat);
-        if (ret == LIST_NOT_FOUND) ; // ok
-        else if (ret != 0) return ret;
 
-        // remove entire message if this was the last/only sub
-        if (list_empty(msg->stats)) {
-            ret = list_add(&emptymsgs, msg);
-            if (ret != 0) return ret;
+        // acquire write lock of statistics list
+        ret = pthread_rwlock_wrlock(msg->stats->listrwlock);
+        assert(ret == 0);
+
+        val = list_remove_generic(msg->stats, same_subscriber, &stat);
+
+        // release write lock of statistics list
+        ret = pthread_rwlock_unlock(msg->stats->listrwlock);
+        assert(ret == 0);
+
+        if (val == LIST_NOT_FOUND) {
+            // ok
+            val = 0; // reset to avoid returning an error
+        } else if (val < 0) {
+            // something went seriously wrong
+            break; // exit for loop
         }
     }
 
-    // cleanup
-    for (cur = emptymsgs.root; cur != NULL; cur = cur->next) {
-        struct message *msg = cur->entry;
-        ret = list_remove(messages, msg);
-        if (ret != 0) return ret;
-        free(msg->stats);
-        free(msg->content);
-        free(msg->topicname);
-        free(msg);
-    }
+    // release read lock of message list
+    ret = pthread_rwlock_unlock(messages->listrwlock);
+    assert(ret == 0);
 
-    return 0;
+    return val;
 }
 
 void topic_strerror(int errcode, char *buf) {

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <pthread.h>
 
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
@@ -497,7 +498,6 @@ void test_msg_remove_subscriber_last() {
     struct list topics;
     struct list messages;
     struct subscriber sub1 = {&c1, "hans"};
-    struct message *msg;
 
     // one message
     list_init(&topics);
@@ -506,9 +506,6 @@ void test_msg_remove_subscriber_last() {
     topic_add_message(&topics, &messages, "stocks", "price: 33");
     ret = message_remove_subscriber(&messages, &sub1);
     CU_ASSERT_EQUAL_FATAL(0, ret);
-    msg = message_find_by_content(&messages, "price: 33");
-    CU_ASSERT_PTR_NULL_FATAL(msg);
-    CU_ASSERT_EQUAL_FATAL(0, list_len(&messages));
 
     // two messages
     list_init(&topics);
@@ -518,11 +515,6 @@ void test_msg_remove_subscriber_last() {
     topic_add_message(&topics, &messages, "stocks", "price: 34");
     ret = message_remove_subscriber(&messages, &sub1);
     CU_ASSERT_EQUAL_FATAL(0, ret);
-    msg = message_find_by_content(&messages, "price: 33");
-    CU_ASSERT_PTR_NULL_FATAL(msg);
-    msg = message_find_by_content(&messages, "price: 34");
-    CU_ASSERT_PTR_NULL_FATAL(msg);
-    CU_ASSERT_EQUAL_FATAL(0, list_len(&messages));
 }
 
 void test_msg_remove_subscriber_not_subscribed() {
