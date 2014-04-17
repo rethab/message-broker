@@ -32,12 +32,15 @@ static void lvl_to_string(LOGLVL lvl, char **strlevel) {
 
 void logging(LOGLVL lvl, const char *msg) {
     char *strlevel;
+    int ret;
     if (lvl < LOGLEVEL) {
         return;
     }
     lvl_to_string(lvl, &strlevel);
-    assert(pthread_mutex_lock(&stderr_mutex) == 0);
+    ret = pthread_mutex_lock(&stderr_mutex);
+    assert(ret == 0);
     fprintf(stderr, "%s: %s\n", strlevel, msg);
-    assert(pthread_mutex_unlock(&stderr_mutex) == 0);
+    ret = pthread_mutex_unlock(&stderr_mutex);
+    assert(ret == 0);
     free(strlevel);
 }

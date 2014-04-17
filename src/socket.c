@@ -11,7 +11,6 @@
 #define BUFSIZE 1024
 
 int socket_read_command(struct client *client, struct stomp_command *cmd) {
-    printf("socket_read_command: %d\n", client->sockfd);
     int ret;
 
     int pos;
@@ -20,7 +19,8 @@ int socket_read_command(struct client *client, struct stomp_command *cmd) {
 
 
     // accquire lock to read entire command
-    assert(pthread_mutex_lock(client->mutex_r) == 0);
+    ret = pthread_mutex_lock(client->mutex_r);
+    assert(ret == 0);
 
     pos = 0;
     while (pos < BUFSIZE) {
@@ -30,7 +30,8 @@ int socket_read_command(struct client *client, struct stomp_command *cmd) {
         if (ret != 1) {
 
             // release lock 
-            assert(pthread_mutex_unlock(client->mutex_r) == 0);
+            ret = pthread_mutex_unlock(client->mutex_r);
+            assert(ret == 0);
 
             fprintf(stderr, "read: %s\n", strerror(errno));
             return SOCKET_CLIENT_GONE;
@@ -45,7 +46,8 @@ int socket_read_command(struct client *client, struct stomp_command *cmd) {
     }
 
     // release lock
-    assert(pthread_mutex_unlock(client->mutex_r) == 0);
+    ret = pthread_mutex_unlock(client->mutex_r);
+    assert(ret == 0);
 
     if (pos == BUFSIZE && buf[pos-1] != '\0') {
         return SOCKET_TOO_MUCH;
@@ -79,12 +81,14 @@ int socket_send_command(struct client *client, struct stomp_command cmd) {
     resplen = strlen(resp) + 1;
 
     // acquire lock
-    assert(pthread_mutex_lock(client->mutex_w) == 0);
+    ret = pthread_mutex_lock(client->mutex_w);
+    assert(ret == 0);
 
     ret = write(client->sockfd, resp, resplen);
 
     // acquire lock
-    assert(pthread_mutex_unlock(client->mutex_w) == 0);
+    ret = pthread_mutex_unlock(client->mutex_w);
+    assert(ret == 0);
 
     free(resp);
     if (ret == -1) {
