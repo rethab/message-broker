@@ -143,7 +143,7 @@ int topic_add_subscriber(struct list *topics, char *name,
      */
 
     // acquire read lock for topics list
-    ret = pthread_rwlock_tryrdlock(topics->listrwlock);
+    ret = pthread_rwlock_rdlock(topics->listrwlock);
     assert(ret == 0);
 
 
