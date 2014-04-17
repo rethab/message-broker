@@ -209,3 +209,19 @@ int message_remove_subscriber(struct list *messages,
 
     return 0;
 }
+
+void topic_strerror(int errcode, char *buf) {
+    switch (errcode) {
+        case TOPIC_CREATION_FAILED:
+            sprintf(buf, "TOPIC_CREATION_FAILED");
+            break;
+        case TOPIC_NOT_FOUND:
+            sprintf(buf, "TOPIC_NOT_FOUND");
+            break;
+        case TOPIC_NO_SUBSCRIBERS:
+            sprintf(buf, "TOPIC_NO_SUBSCRIBERS");
+            break;
+        default:
+            sprintf(buf, "UNKNOWN_ERROR");
+    }
+}

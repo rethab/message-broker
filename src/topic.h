@@ -82,6 +82,10 @@ int topic_add_message(struct list *topics, struct list *messages,
 int message_remove_subscriber(struct list *messages,
     struct subscriber *subscriber);
 
+/* converts a topic error code (TOPIC_) to a string.
+ * the buffer should be 32 bytes */
+void topic_strerror(int errcode, char *buf);
+
 
 #define LIST_NOT_FOUND -2
 
