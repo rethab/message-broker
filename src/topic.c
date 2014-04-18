@@ -398,3 +398,46 @@ void topic_strerror(int errcode, char *buf) {
             sprintf(buf, "UNKNOWN_ERROR");
     }
 }
+
+int message_init(struct message *message) {
+    message->content = NULL;
+    message->topicname = NULL;
+    struct list *stats = malloc(sizeof(struct list));
+    assert(stats != NULL);
+    list_init(stats);
+    message->stats = stats;
+    return 0;
+}
+
+int message_destroy(struct message *message) {
+    list_destroy(message->stats);
+    free(message->stats);
+    return 0;
+}
+
+int msg_statistics_init(struct msg_statistics *stat) {
+    
+    int ret;
+
+    pthread_rwlock_t *statrwlock = malloc(sizeof(pthread_rwlock_t));
+    assert(statrwlock != NULL);
+    ret = pthread_rwlock_init(statrwlock, NULL);
+    assert(ret == 0);
+
+    stat->statrwlock = statrwlock;
+    stat->last_fail = 0;
+    stat->nattempts = 0;
+
+    return 0;
+}
+
+int msg_statistics_destroy(struct msg_statistics *stat) {
+
+    int ret;
+
+    ret = pthread_rwlock_destroy(stat->statrwlock);
+    assert(ret == 0);
+    free(stat->statrwlock);
+
+    return 0;
+}

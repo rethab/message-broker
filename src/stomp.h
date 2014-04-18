@@ -69,9 +69,8 @@
  * 6. MESSAGE
  *    a. Message sent to a subscriber of a topic
  *    b. Headers
- *       i.  message-id: an integer identifying the message
- *       ii. destination: a string identifying the topic
- *           this message was sent to
+ *       i. destination: a string identifying the topic
+ *          this message was sent to
  *    c. Content: The contents of the message
  * 7. DISCONNECT
  *    a. Sent by a connected client to end a connection

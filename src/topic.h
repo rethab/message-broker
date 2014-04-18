@@ -45,16 +45,21 @@ struct msg_statistics {
     pthread_rwlock_t *statrwlock;
 
     /* the last time the message sending failed,
-     * unix timestamp, 0 if never failed before.
+     * unix timestamp, 0 if never failed before
+     * or last delivery was successful.
      */
     long last_fail;
 
-    /* number of attempts made to deliver message */
+    /* number of attempts made to deliver message. if
+     * at least one attempt was made and the last one
+     * was successful, then the entire message is
+     * to be viewed as successful and must not
+     * redelivered
+     */
     int nattempts;
 
     /* receiver of the message */
     struct subscriber *subscriber;
-
 };
 
 /* message waiting for delivery. exists
@@ -68,18 +73,21 @@ struct message {
     /* name of the topic it belongs to */
     char *topicname;
 
-    /* guards the list of statistics. is
-     * to be held in write mode if the list
-     * itself is modified and in read mode
-     * if an entry of the list is read or 
-     * modified. this lock must only be
-     * acquired if the parent lock (list
-     * of messages) is held in read mode */
-    pthread_rwlock_t *statsrwlock;
-
     /* statistics of this message, per subscriber */
     struct list *stats;
 };
+
+/* initializes a message */
+int message_init(struct message *message);
+
+/* destroys a message */
+int message_destroy(struct message *message);
+
+/* initializes message statistics */
+int msg_statistics_init(struct msg_statistics *stat);
+
+/* destroys message statistics */
+int msg_statistics_destroy(struct msg_statistics *stat);
 
 /* adds the subscriber to the topic. if the
  * topic does not exist, it is created
