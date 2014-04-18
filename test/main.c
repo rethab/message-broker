@@ -12,6 +12,7 @@
 #include "socket-test.c"
 #include "broker-test.c"
 #include "distributor-test.c"
+#include "gc-test.c"
 
 int main(int argc, char **argv) {
     install_segfault_handler();
@@ -25,6 +26,7 @@ int main(int argc, char **argv) {
     socket_test_suite();
     broker_test_suite();
     distributor_test_suite();
+    gc_test_suite();
 
     CU_basic_run_tests();
     CU_cleanup_registry();

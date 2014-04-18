@@ -30,6 +30,7 @@ int list_destroy(struct list *list) {
     ret = pthread_rwlock_destroy(list->listrwlock);
     assert(ret == 0);
     free(list->listrwlock);
+    list->listrwlock = NULL;
 
     list->root = NULL;
 
@@ -294,13 +295,7 @@ int topic_add_message(struct list *topics, struct list *messages,
             stat->nattempts = 0;
             stat->subscriber = sub;
             int ret = list_add(msg->stats, stat);
-            if (ret != 0) {
-                free(stat);
-                free(msg->stats);
-                free(msg);
-                return ret;
-            }
-
+            assert(ret == 0);
             cur = cur->next;
         }
 
@@ -393,6 +388,7 @@ int message_init(struct message *message) {
 int message_destroy(struct message *message) {
     list_destroy(message->stats);
     free(message->stats);
+    message->stats = NULL;
     return 0;
 }
 
@@ -419,6 +415,7 @@ int msg_statistics_destroy(struct msg_statistics *stat) {
     ret = pthread_rwlock_destroy(stat->statrwlock);
     assert(ret == 0);
     free(stat->statrwlock);
+    stat->statrwlock = NULL;
 
     return 0;
 }
