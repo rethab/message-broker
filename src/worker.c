@@ -34,7 +34,7 @@ int send_receipt(struct client *client) {
     return socket_send_command(client, respc);
 }
 
-int send_connected(struct worker_params params) {
+int send_connected(struct client *client) {
     struct stomp_command respc;
 
     respc.name = "CONNECTED";
@@ -42,14 +42,17 @@ int send_connected(struct worker_params params) {
     respc.nheaders = 0;
     respc.content = NULL;
 
-    return socket_send_command(params.client, respc);
+    return socket_send_command(client, respc);
 }
 
-int process_send(struct worker_params params, struct stomp_command cmd) {
+int process_send(struct broker_context *ctx,
+                 struct client *client,
+                 struct stomp_command cmd) {
     int ret;
 
-    struct list *topics = params.topics;
-    struct list *messages = params.messages;
+    struct list *topics = ctx->topics;
+    struct list *messages = ctx->messages;
+
     char *topic = cmd.headers[0].val; // has only one header
     char *content = cmd.content;
 
@@ -59,7 +62,7 @@ int process_send(struct worker_params params, struct stomp_command cmd) {
         topic_strerror(ret, errmsg);
         fprintf(stderr,
             "Error from topic_add_message: %s (%d)\n", errmsg, ret);
-        ret = send_error(params.client, "Failed to add message");
+        ret = send_error(client, "Failed to add message");
 
         if (ret != 0) fprintf(stderr, "Failed to send error\n");
 
@@ -70,24 +73,27 @@ int process_send(struct worker_params params, struct stomp_command cmd) {
     }
 }
 
-int process_subscribe(struct worker_params params,
-        struct stomp_command cmd, struct subscriber *sub) {
+int process_subscribe(struct broker_context *ctx,
+                      struct stomp_command cmd,
+                      struct subscriber *sub) {
     int ret;
 
-    struct list *topics = params.topics;
+    struct list *topics = ctx->topics;
     char *topic = cmd.headers[0].val; // has only one header
 
     ret = topic_add_subscriber(topics, topic, sub);
     assert(ret == 0);
-    printf("Added subscriber '%s' to topic '%s'\n", sub->name, topic);
+
+    return 0;
 }
 
-int process_disconnect(struct worker_params params,
-        struct subscriber *sub) {
+int process_disconnect(struct broker_context *ctx,
+                       struct client *client,
+                       struct subscriber *sub) {
     int ret;
 
-    struct list *topics = params.topics;
-    struct list *messages = params.messages;
+    struct list *topics = ctx->topics;
+    struct list *messages = ctx->messages;
 
     // remove from topic
     ret = topic_remove_subscriber(topics, sub);
@@ -99,9 +105,9 @@ int process_disconnect(struct worker_params params,
 
     printf("Removed subscriber '%s' from message\n", sub->name);
 
-    ret = send_receipt(params.client);
+    ret = send_receipt(client);
     if (ret != 0) {
-        ret = send_error(params.client, "Failed to send receipt");
+        ret = send_error(client, "Failed to send receipt");
 
         if (ret != 0) fprintf(stderr, "Failed to send error\n");
         
@@ -109,45 +115,68 @@ int process_disconnect(struct worker_params params,
     return 0;
 }
 
-void handle_client(struct worker_params params) {
+int main_loop(struct broker_context *ctx,
+              struct client *client,
+              int *connected,
+              struct subscriber *sub) {
+
     int ret;
-    int connected;
     struct stomp_command cmd;
-    struct subscriber sub;
 
-    connected = 0;
-    while (1) {
-        ret = socket_read_command(params.client, &cmd);
-        if (ret != 0) {
-            ret = send_error(params.client, "Failed to parse");
-            continue;
-        }
-
-        if (!connected) {
-            if (strcmp("CONNECT", cmd.name) != 0) {
-                ret = send_error(params.client, "Expected CONNECT");
-                continue;
-            } else {
-                connected = 1;
-                sub.client = params.client;
-                sub.name = cmd.headers[0].val; // has only one header
-                ret = send_connected(params);
-                continue;
-            }
-        } else {
-            if (strcmp("SEND", cmd.name) == 0) {
-                ret = process_send(params, cmd);
-            } else if (strcmp("SUBSCRIBE", cmd.name) == 0) {
-                ret = process_subscribe(params, cmd, &sub);
-            } else if (strcmp("DISCONNECT", cmd.name) == 0) {
-                ret = process_disconnect(params, &sub);
-                return;
-            } else {
-                ret = send_error(params.client, "Unexpected command");
-                fprintf(stderr, "Unexpected Command %s\n", cmd.name);
-            }
-                
-        }
-
+    ret = socket_read_command(client, &cmd);
+    if (ret == SOCKET_CLIENT_GONE || ret == SOCKET_NECROMANCE) {
+        printf("Cient has gone\n");
+        return WORKER_ERROR;
+    } else if (ret == SOCKET_TOO_MUCH) {
+        printf("Client has sent too much. Closing Connection\n");
+        return WORKER_ERROR;
+    } else {
+        assert(ret == 0);
     }
+
+    if (!(*connected)) {
+        if (strcmp("CONNECT", cmd.name) != 0) {
+            ret = send_error(client, "Expected CONNECT");
+            return WORKER_CONTINUE;
+        } else {
+            *connected = 1;
+            sub->client = client;
+            sub->name = cmd.headers[0].val; // has only one header
+            ret = send_connected(client);
+            return WORKER_CONTINUE;
+        }
+    } else {
+        if (strcmp("SEND", cmd.name) == 0) {
+            ret = process_send(ctx, client, cmd);
+            return WORKER_CONTINUE;
+        } else if (strcmp("SUBSCRIBE", cmd.name) == 0) {
+            ret = process_subscribe(ctx, cmd, sub);
+            return WORKER_CONTINUE;
+        } else if (strcmp("DISCONNECT", cmd.name) == 0) {
+            ret = process_disconnect(ctx, client, sub);
+            return WORKER_STOP;
+        } else {
+            // impossible, socket read would have failed
+            assert(0);
+        }
+    }
+}
+
+void handle_client(struct broker_context *ctx, int sockfd) {
+
+    int ret;
+    struct client client;
+    struct subscriber sub;
+    int connected = 0;
+
+    client_init(&client);
+    client.sockfd = sockfd;
+
+    do {
+        ret = main_loop(ctx, &client, &connected, &sub);
+    } while (ret == WORKER_CONTINUE);
+
+    socket_terminate_client(&client);
+
+    client_destroy(&client);
 }

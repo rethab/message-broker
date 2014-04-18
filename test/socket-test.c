@@ -173,6 +173,29 @@ void test_send_command_socket_closed() {
     client_destroy(&client);
 }
 
+void test_terminate_client() {
+    int ret;
+    int fds[2]; // 0=read, 1=write
+    struct client client;
+
+    assert(pipe(fds) == 0);
+    client_init(&client);
+    client.sockfd = fds[1];
+
+    ret = socket_terminate_client(&client);
+    assert(ret == 0);
+
+    CU_ASSERT_EQUAL_FATAL(1, client.dead);
+    ret = close(fds[1]);
+    // should already be closed
+    CU_ASSERT_EQUAL_FATAL(-1, ret);
+    CU_ASSERT_EQUAL_FATAL(EBADF, errno);
+
+    assert(0 == close(fds[0]));
+
+    client_destroy(&client);
+}
+
 
 void socket_test_suite() {
     CU_pSuite socketSuite = CU_add_suite("socket", NULL, NULL);
@@ -186,5 +209,6 @@ void socket_test_suite() {
     CU_add_test(socketSuite, "test_send_command_socket_closed",
         test_send_command_socket_closed);
     CU_add_test(socketSuite, "test_send_command", test_send_command);
-
+    CU_add_test(socketSuite, "test_terminate_client",
+        test_terminate_client);
 }

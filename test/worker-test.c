@@ -59,16 +59,14 @@ void test_send_receipt() {
 void test_send_connected() {
     int ret;
     int fds[2]; // 0=read, 1=write
-    struct worker_params params;
     struct client client;
-    params.client = &client;
     char rawcmd[32];
 
     assert(pipe(fds) == 0);
     client_init(&client);
     client.sockfd = fds[1];
 
-    ret = send_connected(params);
+    ret = send_connected(&client);
     CU_ASSERT_EQUAL_FATAL(0, ret);
 
     assert(read(fds[0], rawcmd, 32) > 0);
@@ -81,7 +79,7 @@ void test_send_connected() {
 
 void test_process_send() {
     int ret;
-    struct worker_params params;
+    struct broker_context ctx ;
     struct stomp_command cmd;
     struct stomp_header header;
     struct list topics;
@@ -89,6 +87,7 @@ void test_process_send() {
     struct subscriber sub;
     struct message *msg;
     struct topic *topic;
+    struct client client;
 
     cmd.name = "SEND";
     header.key = "topic";
@@ -97,12 +96,13 @@ void test_process_send() {
     cmd.nheaders = 1;
     cmd.content = "price: 22.3";
     list_init(&topics);
-    params.topics = &topics;
+    ctx.topics = &topics;
     list_init(&messages);
-    params.messages = &messages;
+    ctx.messages = &messages;
+    client_init(&client);
 
     assert(0 == topic_add_subscriber(&topics, "stocks", &sub));
-    ret = process_send(params, cmd);
+    ret = process_send(&ctx, &client, cmd);
 
     CU_ASSERT_EQUAL_FATAL(0, ret);
     msg = messages.root->entry;
@@ -111,11 +111,12 @@ void test_process_send() {
 
     topic = topics.root->entry;
     CU_ASSERT_STRING_EQUAL_FATAL("stocks", topic->name);
+    client_destroy(&client);
 }
 
 void test_process_send_no_subscriber() {
     int ret;
-    struct worker_params params;
+    struct broker_context ctx ;
     struct stomp_command cmd;
     struct stomp_header header;
     struct list topics;
@@ -131,15 +132,14 @@ void test_process_send_no_subscriber() {
     cmd.nheaders = 1;
     cmd.content = "price: 22.3";
     list_init(&topics);
-    params.topics = &topics;
+    ctx.topics = &topics;
     list_init(&messages);
-    params.messages = &messages;
+    ctx.messages = &messages;
     assert(pipe(fds) == 0);
-    params.client = &client;
     client_init(&client);
     client.sockfd = fds[1];
 
-    ret = process_send(params, cmd);
+    ret = process_send(&ctx, &client, cmd);
 
     CU_ASSERT_EQUAL_FATAL(-1, ret);
     assert(0 < read(fds[0], resp, 64));
@@ -152,7 +152,7 @@ void test_process_send_no_subscriber() {
 
 void test_process_subscribe() {
     int ret;
-    struct worker_params params;
+    struct broker_context ctx ;
     struct stomp_command cmd;
     struct stomp_header header;
     struct list topics;
@@ -168,12 +168,12 @@ void test_process_subscribe() {
     cmd.headers = &header;
     cmd.nheaders = 1;
     list_init(&topics);
-    params.topics = &topics;
+    ctx.topics = &topics;
     list_init(&messages);
-    params.messages = &messages;
+    ctx.messages = &messages;
     sub1.name = "x2y";
 
-    ret = process_subscribe(params, cmd, &sub1);
+    ret = process_subscribe(&ctx, cmd, &sub1);
 
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_PTR_NULL(messages.root);
@@ -187,7 +187,7 @@ void test_process_subscribe() {
 
 void test_process_disconnect() {
     int ret;
-    struct worker_params params;
+    struct broker_context ctx ;
     struct list topics;
     struct list messages;
     struct subscriber sub;
@@ -197,18 +197,19 @@ void test_process_disconnect() {
     sub.name = "X2Y";
 
     list_init(&topics);
-    params.topics = &topics;
+    ctx.topics = &topics;
     list_init(&messages);
-    params.messages = &messages;
+    ctx.messages = &messages;
     client_init(&client);
-    params.client = &client;
 
     topic_add_subscriber(&topics, "stocks", &sub);
     topic_add_message(&topics, &messages, "stocks", "price: 22.3");
 
-    ret = process_disconnect(params, &sub);
+    ret = process_disconnect(&ctx, &client, &sub);
 
     CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    CU_ASSERT(client.dead);
 
     // topic is not deleted
     topic = topics.root->entry;
@@ -219,7 +220,7 @@ void test_process_disconnect() {
 
 void test_process_disconnect_not_subscribed() {
     int ret;
-    struct worker_params params;
+    struct broker_context ctx ;
     struct list topics;
     struct list messages;
     struct subscriber sub;
@@ -228,13 +229,12 @@ void test_process_disconnect_not_subscribed() {
     sub.name = "X2Y";
 
     list_init(&topics);
-    params.topics = &topics;
+    ctx.topics = &topics;
     list_init(&messages);
     client_init(&client);
-    params.messages = &messages;
-    params.client = &client;
+    ctx.messages = &messages;
 
-    ret = process_disconnect(params, &sub);
+    ret = process_disconnect(&ctx, &client, &sub);
 
     CU_ASSERT_EQUAL_FATAL(0, ret);
 
@@ -242,20 +242,16 @@ void test_process_disconnect_not_subscribed() {
 }
 
 void test_handle_client() {
-    struct worker_params params;
+    struct broker_context ctx;
     struct list topics;
     struct list messages;
-    struct client client;
     int fds[2];
 
     assert(0 == socketpair(AF_UNIX, SOCK_STREAM, 0, fds));
     list_init(&messages);
     list_init(&topics);
-    params.client = &client;
-    params.topics = &topics;
-    params.messages = &messages;
-    client_init(&client);
-    client.sockfd = fds[0];
+    ctx.topics = &topics;
+    ctx.messages = &messages;
 
     char cmd1[] = "CONNECT\nlogin:foo\n\n";
     char cmd2[] = "SUBSCRIBE\ndestination:stocks\n\n";
@@ -266,17 +262,88 @@ void test_handle_client() {
     assert(0 < write(fds[1], cmd2, strlen(cmd2)+1));
     assert(0 < write(fds[1], cmd3, strlen(cmd3)+1));
     assert(0 < write(fds[1], cmd4, strlen(cmd4)+1));
-    handle_client(params);
+    handle_client(&ctx, fds[0]);
 
     size_t resp1len = strlen("CONNECTED\n\n") + 1; // after CONNECT
     char resp1[32]; 
     size_t resp2len = strlen("RECEIPT\n\n") + 1; // after DISCONNECT
     char resp2[32];
-    assert(0 < read(fds[1], resp1, resp1len));
+    int ret = read(fds[1], resp1, resp1len);
+    if (ret != 0) printf("Error: %s\n", strerror(errno));
+    assert(0 < ret);
     assert(0 < read(fds[1], resp2, resp2len));
     CU_ASSERT_STRING_EQUAL_FATAL("CONNECTED\n\n", resp1);
     CU_ASSERT_STRING_EQUAL_FATAL("RECEIPT\n\n", resp2);
+}
+
+void test_handle_client_first_command_not_connect() {
+    struct broker_context ctx;
+    struct list topics;
+    struct list messages;
+    struct subscriber sub;
+    struct client client;
+    int connected = 0;
+    int fds[2];
+
+    client_init(&client);
+    assert(0 == socketpair(AF_UNIX, SOCK_STREAM, 0, fds));
+    client.sockfd = fds[0];
+    list_init(&messages);
+    list_init(&topics);
+    ctx.topics = &topics;
+    ctx.messages = &messages;
+
+    char cmd1[] = "SUBSCRIBE\ndestination:stocks\n\n";
+
+    assert(0 < write(fds[1], cmd1, strlen(cmd1)+1));
+    CU_ASSERT_EQUAL_FATAL(WORKER_CONTINUE,
+        main_loop(&ctx, &client, &connected, &sub));
+
+    size_t resp1len = strlen("ERROR\nmessage:Expected CONNECT\n\n") + 1;
+    char resp1[64]; 
+    assert(0 < read(fds[1], resp1, resp1len));
+    CU_ASSERT_STRING_EQUAL_FATAL("ERROR\nmessage:Expected CONNECT\n\n", resp1);
+    list_destroy(&messages);
+    list_destroy(&topics);
     client_destroy(&client);
+}
+
+void test_handle_client_dead() {
+    struct broker_context ctx ;
+    struct list topics;
+    struct list messages;
+    int fds[2];
+
+    ctx.topics = &topics;
+    ctx.messages = &messages;
+
+    handle_client(&ctx, fds[0]);
+
+    // no assertions, but would block
+    // if it was not working
+}
+
+void test_handle_client_too_much() {
+    struct broker_context ctx;
+    struct list topics;
+    struct list messages;
+    int fds[2];
+
+    assert(0 == socketpair(AF_UNIX, SOCK_STREAM, 0, fds));
+    list_init(&messages);
+    list_init(&topics);
+    ctx.topics = &topics;
+    ctx.messages = &messages;
+
+    char *cmd = malloc(4096);
+    memset(cmd, 1, 4095);
+    cmd[4095] = '\0';
+
+    assert(0 < write(fds[1], cmd, 4096));
+    handle_client(&ctx, fds[0]);
+
+    // should have been closed
+    CU_ASSERT_EQUAL_FATAL(-1, close(fds[0]));
 }
 
 
@@ -294,4 +361,11 @@ void worker_test_suite() {
     CU_add_test(socketSuite, "test_send_receipt", test_send_receipt);
     CU_add_test(socketSuite, "test_send_error", test_send_error);
     CU_add_test(socketSuite, "test_handle_client", test_handle_client);
+    CU_add_test(socketSuite, "test_handle_client_dead",
+        test_handle_client_dead);
+    CU_add_test(socketSuite, "test_handle_client_too_much",
+        test_handle_client_too_much);
+    CU_add_test(socketSuite,
+        "test_handle_client_first_command_not_connect",
+        test_handle_client_first_command_not_connect);
 }

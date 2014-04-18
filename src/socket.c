@@ -159,6 +159,26 @@ int socket_send_command(struct client *client, struct stomp_command cmd) {
     return 0;
 }
 
+int socket_terminate_client(struct client *client) {
+
+    int ret;
+
+    // acquire write lock on dead variable
+    ret = pthread_rwlock_wrlock(client->deadrwlock);
+    assert(ret == 0);
+
+    client->dead = 1; // may already be the case though
+
+    // release lock for dead flag
+    ret = pthread_rwlock_unlock(client->deadrwlock);
+    assert(ret == 0);
+
+    // may fail if already closed
+    close(client->sockfd);
+
+    return 0;
+}
+
 int client_init(struct client *client) {
 
     int ret;

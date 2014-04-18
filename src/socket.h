@@ -58,4 +58,7 @@ int socket_read_command(struct client *client, struct stomp_command *cmd);
 /* sends a command to the client */
 int socket_send_command(struct client *client, struct stomp_command cmd);
 
+/* terminates the connection with a client */
+int socket_terminate_client(struct client *client);
+
 #endif
