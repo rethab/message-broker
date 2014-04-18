@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <assert.h>
 
 #include "topic.h"
 #include "socket.h"
@@ -77,17 +78,8 @@ int process_subscribe(struct worker_params params,
     char *topic = cmd.headers[0].val; // has only one header
 
     ret = topic_add_subscriber(topics, topic, sub);
-    if (ret != 0) {
-        fprintf(stderr, "Error from topic_add_subscriber: %d\n", ret);
-        ret = send_error(params.client, "Failed to add subscriber");
-
-        if (ret != 0) fprintf(stderr, "Failed to send error\n");
-
-        return -1;
-    } else {
-        printf("Added subscriber '%s' to topic '%s'\n", sub->name, topic);
-        return 0;
-    }
+    assert(ret == 0);
+    printf("Added subscriber '%s' to topic '%s'\n", sub->name, topic);
 }
 
 int process_disconnect(struct worker_params params,
@@ -99,37 +91,22 @@ int process_disconnect(struct worker_params params,
 
     // remove from topic
     ret = topic_remove_subscriber(topics, sub);
+    assert(ret == 0);
+
+    // remove from message
+    ret = message_remove_subscriber(messages, sub);
+    assert(ret == 0);
+
+    printf("Removed subscriber '%s' from message\n", sub->name);
+
+    ret = send_receipt(params.client);
     if (ret != 0) {
-        fprintf(stderr, "Error from topic_remove_subscriber: %d\n", ret);
-        ret = send_error(params.client,
-            "Failed to remove subscriber from topic");
+        ret = send_error(params.client, "Failed to send receipt");
 
         if (ret != 0) fprintf(stderr, "Failed to send error\n");
-        return ret;
-
-    } else {
-        // remove from message
-        ret = message_remove_subscriber(messages, sub);
-        if (ret != 0) {
-            fprintf(stderr, "Error from message_remove_subscriber: %d\n", ret);
-            ret = send_error(params.client, "Failed to add subscriber");
-
-            if (ret != 0) fprintf(stderr, "Failed to send error\n");
-
-            return -1;
-        } else {
-            printf("Removed subscriber '%s' from message\n", sub->name);
-
-            ret = send_receipt(params.client);
-            if (ret != 0) {
-                ret = send_error(params.client, "Failed to send receipt");
-
-                if (ret != 0) fprintf(stderr, "Failed to send error\n");
-                
-            }
-            return 0;
-        }
+        
     }
+    return 0;
 }
 
 void handle_client(struct worker_params params) {
