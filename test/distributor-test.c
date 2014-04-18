@@ -113,19 +113,16 @@ void test_deliver_messages() {
 
     size_t nbytes;
     char msgbuf[64];
-    nbytes = read(fds1[1], msgbuf, 46);
+    nbytes = read(fds1[1], msgbuf, 41);
     assert(nbytes > 0);
-    printf("msgContent(%zu): [%s]\n", nbytes, msgbuf);
     CU_ASSERT_STRING_EQUAL_FATAL(
         "MESSAGE\ndestination:stocks\n\nprice:23.3\n\n", msgbuf);
-    assert(0 < read(fds1[1], msgbuf, 46));
-    printf("msgContent: [%s]\n", msgbuf);
+    assert(0 < read(fds1[1], msgbuf, 41));
     CU_ASSERT_STRING_EQUAL_FATAL(
         "MESSAGE\ndestination:stocks\n\nprice:22.2\n\n", msgbuf);
-    assert(0 < read(fds2[1], msgbuf, 46));
-    printf("msgContent: [%s]\n", msgbuf);
+    assert(0 < read(fds2[1], msgbuf, 41));
     CU_ASSERT_STRING_EQUAL_FATAL(
-        "MESSAGE\ndestination:stocks\n\nprice:23.3\n\n", msgbuf);
+        "MESSAGE\ndestination:stocks\n\nprice:22.2\n\n", msgbuf);
     after_test();
 }
 
@@ -156,7 +153,36 @@ void test_deliver_messages_not_eligible() {
     char msgbuf[64];
     assert(0 < read(fds2[1], msgbuf, 46));
     CU_ASSERT_STRING_EQUAL_FATAL(
-        "MESSAGE\ndestination:stocks\n\nprice:23.3\n\n", msgbuf);
+        "MESSAGE\ndestination:stocks\n\nprice:22.2\n\n", msgbuf);
+    after_test();
+}
+
+void test_deliver_message_already_delivered() {
+    before_test();
+    // already successfully sent
+    stat1.nattempts = 1;
+
+    // just tried: dont deliver
+    stat2.nattempts = 1;
+    long stat2_fail = now();
+    stat2.last_fail = stat2_fail;
+
+    // very long ago: deliver
+    stat3.nattempts = 3;
+    stat3.last_fail = now() - DAY;
+
+    deliver_messages(messages);
+    CU_ASSERT_EQUAL_FATAL(1, stat1.nattempts);
+    CU_ASSERT_EQUAL_FATAL(1, stat2.nattempts);
+    CU_ASSERT_EQUAL_FATAL(4, stat3.nattempts);
+    CU_ASSERT_EQUAL_FATAL(0, stat1.last_fail); // not changed
+    CU_ASSERT_EQUAL_FATAL(stat2_fail, stat2.last_fail); // not changed
+    CU_ASSERT_EQUAL_FATAL(0, stat3.last_fail);
+
+    char msgbuf[64];
+    assert(0 < read(fds2[1], msgbuf, 46));
+    CU_ASSERT_STRING_EQUAL_FATAL(
+        "MESSAGE\ndestination:stocks\n\nprice:22.2\n\n", msgbuf);
     after_test();
 }
 
@@ -193,4 +219,7 @@ void distributor_test_suite() {
         test_deliver_messages_not_eligible);
     CU_add_test(distrSuite, "test_handle_closed_socket_and_dead_client",
         test_handle_closed_socket_and_dead_client);
+    CU_add_test(distrSuite, "test_deliver_message_already_delivered",
+        test_deliver_message_already_delivered);
+
 }
