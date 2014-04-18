@@ -9,7 +9,7 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 
-#include "../src/worker.h"
+#include "../src/broker.h"
 #include "../src/topic.h"
 
 void test_send_error() {
@@ -347,8 +347,8 @@ void test_handle_client_too_much() {
 }
 
 
-void worker_test_suite() {
-    CU_pSuite socketSuite = CU_add_suite("worker", NULL, NULL);
+void broker_test_suite() {
+    CU_pSuite socketSuite = CU_add_suite("broker", NULL, NULL);
     CU_add_test(socketSuite, "test_process_send", test_process_send);
     CU_add_test(socketSuite, "test_process_send_no_subscriber", test_process_send_no_subscriber);
     CU_add_test(socketSuite, "test_process_subscribe",
