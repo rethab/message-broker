@@ -18,7 +18,14 @@ static long timestamp() {
 }
 
 void test_gc_eligible_stat() {
+    struct client client;
+    struct subscriber sub;
     struct msg_statistics stat;
+
+    client_init(&client);
+    stat.subscriber = &sub;
+    sub.client = &client;
+
 
     // too many attempts
     stat.nattempts = MAX_ATTEMPTS;
@@ -35,10 +42,6 @@ void test_gc_eligible_stat() {
     stat.last_fail = 0;
     CU_ASSERT_EQUAL_FATAL(1, gc_eligible_stat(&stat));   
 
-    stat.nattempts = 3;
-    stat.last_fail = timestamp() - 1;
-    CU_ASSERT_EQUAL_FATAL(1, gc_eligible_stat(&stat));   
-
     // never tried
     stat.nattempts = 0;
     stat.last_fail = 0;
@@ -48,6 +51,13 @@ void test_gc_eligible_stat() {
     stat.nattempts = MAX_ATTEMPTS - 1;
     stat.last_fail = 4444;
     CU_ASSERT_EQUAL_FATAL(0, gc_eligible_stat(&stat));   
+
+    // dead client
+    stat.nattempts = 0;
+    stat.last_fail = 0;
+    client.dead = 1;
+    CU_ASSERT_EQUAL_FATAL(1, gc_eligible_stat(&stat));   
+
 }
 
 void test_gc_eligible_msg() {
