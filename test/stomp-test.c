@@ -296,6 +296,9 @@ void test_strerror() {
 
     stomp_strerror(STOMP_UNKNOWN_COMMAND, buf);
     CU_ASSERT_STRING_EQUAL_FATAL("STOMP_UNKNOWN_COMMAND", buf);
+
+    stomp_strerror(-1, buf);
+    CU_ASSERT_STRING_EQUAL_FATAL("UNKNOWN_ERROR", buf);
 }
 
 void add_stomp_parse_suite() {

@@ -99,6 +99,22 @@ void test_read_or_write_to_dead_client() {
     client_destroy(&client);
 }
 
+void test_send_invalid_command() {
+    int ret;
+    struct client client;
+    struct stomp_command cmd;
+    cmd.name = "FOO";
+    cmd.nheaders = 0;
+    cmd.content = NULL;
+
+    client_init(&client);
+
+    ret = socket_send_command(&client, cmd);
+    CU_ASSERT_EQUAL_FATAL(-1, ret);
+
+    client_destroy(&client);
+}
+
 void test_read_command_too_much() {
     int ret;
     int fds[2]; // 0=read, 1=write
@@ -211,4 +227,6 @@ void socket_test_suite() {
     CU_add_test(socketSuite, "test_send_command", test_send_command);
     CU_add_test(socketSuite, "test_terminate_client",
         test_terminate_client);
+    CU_add_test(socketSuite, "test_send_invalid_command",
+        test_send_invalid_command);
 }
