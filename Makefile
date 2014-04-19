@@ -3,16 +3,16 @@ TEST_CFLAGS=-Itest -lcunit -g -rdynamic -ftest-coverage -fprofile-arcs -lgcov
 PROD_CFLAGS=-DNDEBUG
 
 server: CFLAGS += $(PROD_CFLAGS)
-server: topic stomp broker socket distributor
-	gcc $(CFLAGS) -o src/server src/server.c src/stomp.o src/topic.o src/broker.o src/socket.o src/distributor.o
+server: topic stomp broker socket distributor gc
+	gcc $(CFLAGS) -o src/server src/server.c src/stomp.o src/topic.o src/broker.o src/socket.o src/distributor.o src/gc.o
 
 client: CFLAGS += $(PROD_CFLAGS)
 client: stomp
 	gcc $(CFLAGS) -o src/client src/client.c src/stomp.o 
 
 test: CFLAGS += $(TEST_CFLAGS)
-test: clean topic stomp socket broker distributor
-	gcc $(CFLAGS) -o test/main.o test/main.c src/topic.o src/stomp.o src/socket.o src/broker.o src/distributor.o
+test: clean topic stomp socket broker distributor gc
+	gcc $(CFLAGS) -o test/main.o test/main.c src/topic.o src/stomp.o src/socket.o src/broker.o src/distributor.o src/gc.o
 
 cover: test
 	test/main.o
@@ -34,6 +34,9 @@ broker: src/broker.c
 
 distributor: src/distributor.c
 	gcc -c $(CFLAGS) -o src/distributor.o src/distributor.c
+
+gc: src/gc.c
+	gcc -c $(CFLAGS) -o src/gc.o src/gc.c
 
 clean:
 	rm -fv {src,test}/*.o
