@@ -112,7 +112,7 @@ void test_gc_collect_eligible_stats() {
     client.dead = 1;
 
     ret = gc_collect_eligible_stats(&messages, &eligible);
-    assert(ret == 0);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
 
     void *entry1 = eligible.root->entry;
     void *entry2 = eligible.root->next->entry;
@@ -147,7 +147,7 @@ void test_gc_collect_eligible_msgs() {
     msg2.stats = &stats2;
 
     ret = gc_collect_eligible_msgs(&messages, &eligible);
-    assert(ret == 0);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
 
     // msg1 is not eligible as it has stats
     CU_ASSERT_PTR_EQUAL_FATAL(eligible.root->entry, &msg2);
@@ -193,7 +193,7 @@ void test_gc_remove_eligible_msgs() {
     list_add(&eligible, &msg3);
 
     ret = gc_remove_eligible_msgs(&messages, &eligible);
-    assert(ret == 0);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
 
     CU_ASSERT_PTR_EQUAL_FATAL(eligible.root->entry, &msg2);
     CU_ASSERT_PTR_EQUAL_FATAL(eligible.root->next->entry, &msg4);
