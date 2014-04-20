@@ -36,7 +36,7 @@ int gc_eligible_stat(struct msg_statistics *stat) {
 }
 
 int gc_eligible_msg(struct message *msg) {
-    return -1;
+    return msg->stats->root == NULL;
 }
 
 int gc_collect_eligible_stats(struct list *messages,
