@@ -389,6 +389,10 @@ int message_destroy(struct message *message) {
     list_destroy(message->stats);
     free(message->stats);
     message->stats = NULL;
+    free(message->content);
+    message->content = NULL;
+    free(message->topicname);
+    message->topicname = NULL;
     return 0;
 }
 

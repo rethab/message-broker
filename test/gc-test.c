@@ -184,12 +184,14 @@ void test_gc_remove_eligible_msgs() {
     struct message msg3;
     struct message msg4;
     struct message msg5;
+    struct message msg6;
 
-    struct list stats1;
-    struct list stats2;
-    struct list stats3;
-    struct list stats4;
-    struct list stats5;
+    struct list *stats1 = malloc(sizeof(struct list));
+    struct list *stats2 = malloc(sizeof(struct list));
+    struct list *stats3 = malloc(sizeof(struct list));
+    struct list *stats4 = malloc(sizeof(struct list));
+    struct list *stats5 = malloc(sizeof(struct list));
+    struct list *stats6 = malloc(sizeof(struct list));
     
     list_init(&messages);   
     list_init(&eligible);
@@ -198,38 +200,47 @@ void test_gc_remove_eligible_msgs() {
     list_add(&messages, &msg3);
     list_add(&messages, &msg4);
     list_add(&messages, &msg5);
-    list_init(&stats1);
-    list_init(&stats2);
-    list_init(&stats3);
-    list_init(&stats4);
-    list_init(&stats5);
-    msg1.stats = &stats1;
-    msg2.stats = &stats2;
-    msg3.stats = &stats3;
-    msg4.stats = &stats4;
-    msg5.stats = &stats5;
+    list_init(stats1);
+    list_init(stats2);
+    list_init(stats3);
+    list_init(stats4);
+    list_init(stats5);
+    list_init(stats6);
+    msg1.stats = stats1;
+    msg1.content = NULL;
+    msg1.topicname = NULL;
+    msg2.stats = stats2;
+    msg2.content = NULL;
+    msg2.topicname = NULL;
+    msg3.stats = stats3;
+    msg3.content = NULL;
+    msg3.topicname = NULL;
+    msg4.stats = stats4;
+    msg4.content = NULL;
+    msg4.topicname = NULL;
+    msg5.stats = stats5;
+    msg5.content = NULL;
+    msg5.topicname = NULL;
 
     list_add(&eligible, &msg1);
     list_add(&eligible, &msg3);
+    list_add(&eligible, &msg6);
 
     ret = gc_remove_eligible_msgs(&messages, &eligible);
     CU_ASSERT_EQUAL_FATAL(0, ret);
 
-    CU_ASSERT_PTR_EQUAL_FATAL(eligible.root->entry, &msg2);
-    CU_ASSERT_PTR_EQUAL_FATAL(eligible.root->next->entry, &msg4);
-    CU_ASSERT_PTR_EQUAL_FATAL(eligible.root->next->next->entry, &msg5);
-    CU_ASSERT_PTR_NULL_FATAL(eligible.root->next->next->next);
+    CU_ASSERT_PTR_EQUAL_FATAL(messages.root->entry, &msg2);
+    CU_ASSERT_PTR_EQUAL_FATAL(messages.root->next->entry, &msg4);
+    CU_ASSERT_PTR_EQUAL_FATAL(messages.root->next->next->entry, &msg5);
+    CU_ASSERT_PTR_NULL_FATAL(messages.root->next->next->next);
 
     // make sure stuff has been freed 
     CU_ASSERT_PTR_NULL_FATAL(msg1.content);
     CU_ASSERT_PTR_NULL_FATAL(msg1.topicname);
     CU_ASSERT_PTR_NULL_FATAL(msg1.stats);
-    CU_ASSERT_PTR_NULL_FATAL(msg2.content);
-    CU_ASSERT_PTR_NULL_FATAL(msg2.topicname);
-    CU_ASSERT_PTR_NULL_FATAL(msg2.stats);
-
-    list_destroy(&messages);
-    list_destroy(&eligible);
+    CU_ASSERT_PTR_NULL_FATAL(msg3.content);
+    CU_ASSERT_PTR_NULL_FATAL(msg3.topicname);
+    CU_ASSERT_PTR_NULL_FATAL(msg3.stats);
 }
 
 void test_gc_remove_eligible_stats() {
@@ -281,12 +292,9 @@ void test_gc_remove_eligible_stats() {
 
     // explicitly not free subscriber
     CU_ASSERT_PTR_NULL_FATAL(stat11.statrwlock);
-    CU_ASSERT_PTR_NULL_FATAL(stat11.subscriber);
-    CU_ASSERT_PTR_NULL_FATAL(stat21.statrwlock);
-    CU_ASSERT_PTR_NULL_FATAL(stat21.subscriber);
+    CU_ASSERT_PTR_NULL_FATAL(stat12.statrwlock);
+    CU_ASSERT_PTR_NULL_FATAL(stat22.statrwlock);
 
-    list_destroy(&messages);
-    list_destroy(&eligible);
 }
 
 void gc_test_suite() {

@@ -133,10 +133,72 @@ int gc_collect_eligible_msgs(struct list *messages,
 
 int gc_remove_eligible_stats(struct list *messages,
                              struct list *eligible) {
-    return -1;
+    int ret;
+
+    // acquire read lock on message list
+    ret = pthread_rwlock_rdlock(messages->listrwlock);
+    assert(ret == 0);
+
+    struct node *curStat = eligible->root;
+    while (curStat != NULL) {
+
+        struct node *curMsg = messages->root;
+        while (curMsg != NULL) {
+            struct message *msg = curMsg->entry;
+
+            // acquire write lock on statistic
+            ret = pthread_rwlock_wrlock(msg->stats->listrwlock);
+            assert(ret == 0);
+
+            ret = list_remove(msg->stats, curStat->entry);
+            if (ret == 0) {
+                msg_statistics_destroy(curStat->entry);
+            } else {
+                assert(ret == LIST_NOT_FOUND);
+            }
+
+            // release write lock on statistic
+            ret = pthread_rwlock_unlock(msg->stats->listrwlock);
+            assert(ret == 0);
+
+
+            curMsg = curMsg->next;
+        }
+
+        curStat = curStat->next;
+    }
+
+    // release write lock on message list
+    ret = pthread_rwlock_unlock(messages->listrwlock);
+    assert(ret == 0);
+
+    return 0;
 }
 
 int gc_remove_eligible_msgs(struct list *messages,
                             struct list *eligible) {
-    return -1;
+    int ret;
+
+    // acquire write lock on message list
+    ret = pthread_rwlock_wrlock(messages->listrwlock);
+    assert(ret == 0);
+
+    struct node *cur = eligible->root;
+    while (cur != NULL) {
+
+        ret = list_remove(messages, cur->entry);
+        if (ret == 0) {
+            message_destroy(cur->entry);
+        } else {
+            assert(ret == LIST_NOT_FOUND);
+        }
+
+        cur = cur->next;
+    }
+
+    // release write lock on message list
+    ret = pthread_rwlock_unlock(messages->listrwlock);
+    assert(ret == 0);
+
+    return 0;
 }

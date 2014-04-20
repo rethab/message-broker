@@ -32,10 +32,10 @@ static int before_test() {
 
     message_init(&msg1);
     message_init(&msg2);
-    msg1.topicname = "stocks";
-    msg2.topicname = "stocks";
-    msg1.content = "price:23.3";
-    msg2.content = "price:22.2";
+    msg1.topicname = strdup("stocks");
+    msg2.topicname = strdup("stocks");
+    msg1.content = strdup("price:23.3");
+    msg2.content = strdup("price:22.2");
     list_add(&messages, &msg1);
     list_add(&messages, &msg2); 
 
