@@ -28,7 +28,7 @@ int gc_eligible_stat(struct msg_statistics *stat) {
         }
 
         // release read lock for dead flag
-        ret = pthread_rwlock_rdlock(deadrwlock);
+        ret = pthread_rwlock_unlock(deadrwlock);
         assert(ret == 0);
     }
 
@@ -36,12 +36,62 @@ int gc_eligible_stat(struct msg_statistics *stat) {
 }
 
 int gc_eligible_msg(struct message *msg) {
-    return msg->stats->root == NULL;
+
+    int ret; // return value from other functions
+    int val;
+
+    // acquire read lock for statstics list
+    ret = pthread_rwlock_rdlock(msg->stats->listrwlock);
+    assert(ret == 0);
+
+    val = (msg->stats->root == NULL);
+
+    // release read lock for statstics list
+    ret = pthread_rwlock_unlock(msg->stats->listrwlock);
+    assert(ret == 0);
+
+    return val;
 }
 
 int gc_collect_eligible_stats(struct list *messages,
                               struct list *eligible) {
-    return -1;
+
+    int ret;
+
+    // acquire read lock for messages list
+    ret = pthread_rwlock_rdlock(messages->listrwlock);
+    assert(ret == 0);
+
+    struct node *curMsg = messages->root;
+    while (curMsg != NULL) {
+
+        struct message *msg = curMsg->entry;
+
+        // acquire read lock for stats list
+        ret = pthread_rwlock_rdlock(msg->stats->listrwlock);
+        assert(ret == 0);
+
+        struct node *curStat = msg->stats->root;
+        while (curStat != NULL) {
+            if (gc_eligible_stat(curStat->entry)) {
+                  ret = list_add(eligible, curStat->entry);  
+                  assert(ret == 0);
+            }
+            curStat = curStat->next;
+        }
+
+        // release read lock for stats list
+        ret = pthread_rwlock_unlock(msg->stats->listrwlock);
+        assert(ret == 0);
+
+        curMsg = curMsg->next;
+    }
+
+    // release read lock for messages list
+    ret = pthread_rwlock_unlock(messages->listrwlock);
+    assert(ret == 0);
+
+    return 0;
 }
 
 int gc_collect_eligible_msgs(struct list *messages,

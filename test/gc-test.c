@@ -87,8 +87,12 @@ void test_gc_collect_eligible_stats() {
     struct msg_statistics stat11;
     struct msg_statistics stat12;
     struct msg_statistics stat13;
-    struct subscriber sub;
-    struct client client;
+    struct subscriber sub1;
+    struct client client1;
+    struct subscriber sub2;
+    struct client client2;
+    struct subscriber sub3;
+    struct client client3;
 
     struct message msg2;
     struct list stats2;
@@ -104,22 +108,28 @@ void test_gc_collect_eligible_stats() {
     list_add(&stats1, &stat13);
     msg1.stats = &stats1;
     msg2.stats = &stats2;
-    client_init(&client);
+    client_init(&client1);
+    client_init(&client2);
+    client_init(&client3);
 
     // eligible
     stat11.nattempts = MAX_ATTEMPTS;
     stat11.last_fail = timestamp();
+    stat11.subscriber = &sub1;
+    sub1.client = &client1;
 
     // not eligible
     stat12.nattempts = 1;
     stat12.last_fail = timestamp();
+    stat12.subscriber = &sub2;
+    sub2.client = &client2;
 
     // eligible (dead client)
     stat13.nattempts = 0;
     stat13.last_fail = 0;
-    stat13.subscriber = &sub;
-    sub.client = &client;
-    client.dead = 1;
+    stat13.subscriber = &sub3;
+    sub3.client = &client3;
+    client3.dead = 1;
 
     ret = gc_collect_eligible_stats(&messages, &eligible);
     CU_ASSERT_EQUAL_FATAL(0, ret);
@@ -128,10 +138,10 @@ void test_gc_collect_eligible_stats() {
     void *entry2 = eligible.root->next->entry;
 
     CU_ASSERT(entry1 == &stat11 || entry2 == &stat11);
-    CU_ASSERT(entry1 == &stat12 || entry2 == &stat12);
+    CU_ASSERT(entry1 == &stat13 || entry2 == &stat13);
     CU_ASSERT(entry1 != entry2);
 
-    client_destroy(&client);
+    client_destroy(&client1);
 }
 
 void test_gc_collect_eligible_msgs() {
