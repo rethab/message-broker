@@ -23,7 +23,7 @@
  * to be sent to a subscriber. this may be for the first
  * time or because it is eligible to be resent.
  */
-void deliver_messages(struct list messages);
+void deliver_messages(struct list *messages);
 
 /* main loop that runs distributor functions. accepts
  * param of type 'struct broker_context' */

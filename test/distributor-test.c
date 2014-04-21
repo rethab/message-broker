@@ -103,7 +103,7 @@ void test_deliver_messages() {
     stat3.nattempts = 3;
     stat3.last_fail = now() - DAY;
 
-    deliver_messages(messages);
+    deliver_messages(&messages);
     CU_ASSERT_EQUAL_FATAL(1, stat1.nattempts);
     CU_ASSERT_EQUAL_FATAL(2, stat2.nattempts);
     CU_ASSERT_EQUAL_FATAL(4, stat3.nattempts);
@@ -142,7 +142,7 @@ void test_deliver_messages_not_eligible() {
     stat3.nattempts = 3;
     stat3.last_fail = now() - DAY;
 
-    deliver_messages(messages);
+    deliver_messages(&messages);
     CU_ASSERT_EQUAL_FATAL(999, stat1.nattempts);
     CU_ASSERT_EQUAL_FATAL(1, stat2.nattempts);
     CU_ASSERT_EQUAL_FATAL(4, stat3.nattempts);
@@ -171,7 +171,7 @@ void test_deliver_message_already_delivered() {
     stat3.nattempts = 3;
     stat3.last_fail = now() - DAY;
 
-    deliver_messages(messages);
+    deliver_messages(&messages);
     CU_ASSERT_EQUAL_FATAL(1, stat1.nattempts);
     CU_ASSERT_EQUAL_FATAL(1, stat2.nattempts);
     CU_ASSERT_EQUAL_FATAL(4, stat3.nattempts);
@@ -204,7 +204,7 @@ void test_handle_closed_socket_and_dead_client() {
     client1.dead = 1;
     assert(close(fds2[0]) == 0);
 
-    deliver_messages(messages);
+    deliver_messages(&messages);
 
     CU_ASSERT(client2.dead);
     after_test();

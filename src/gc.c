@@ -20,11 +20,11 @@ int gc_eligible_stat(struct msg_statistics *stat) {
         val = 1;
     } else {
 
-        pthread_rwlock_t *deadrwlock;
-        deadrwlock = stat->subscriber->client->deadrwlock; 
+        pthread_mutex_t *deadmutex;
+        deadmutex = stat->subscriber->client->deadmutex; 
 
         // acquire read lock for dead flag
-        ret = pthread_rwlock_rdlock(deadrwlock);
+        ret = pthread_mutex_lock(deadmutex);
         assert(ret == 0);
 
         if (stat->subscriber->client->dead) {
@@ -32,7 +32,7 @@ int gc_eligible_stat(struct msg_statistics *stat) {
         }
 
         // release read lock for dead flag
-        ret = pthread_rwlock_unlock(deadrwlock);
+        ret = pthread_mutex_unlock(deadmutex);
         assert(ret == 0);
     }
 

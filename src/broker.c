@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
+#include <pthread.h>
 
 #include "topic.h"
 #include "broker.h"
@@ -115,26 +116,30 @@ int process_disconnect(struct broker_context *ctx,
                        struct subscriber *sub) {
     int ret;
 
-    struct list *topics = ctx->topics;
-    struct list *messages = ctx->messages;
-
-    // remove from topic
-    ret = topic_remove_subscriber(topics, sub);
+    // acquire lock for dead flag
+    ret = pthread_mutex_lock(client->deadmutex);
     assert(ret == 0);
 
-    // remove from message
-    ret = message_remove_subscriber(messages, sub);
-    assert(ret == 0);
-
-    printf("Removed subscriber '%s' from message\n", sub->name);
-
+    // send receipt with lock held in order to
+    // prevent other threads sending data
+    // after the receipt has been sent
     ret = send_receipt(client);
     if (ret != 0) {
         ret = send_error(client, "Failed to send receipt");
 
         if (ret != 0) fprintf(stderr, "Failed to send error\n");
-        
     }
+
+    // set to dead after sending receipt, because
+    // flag will be checked before sending
+    client->dead = 1;
+
+
+    // release lock for dead flag
+    ret = pthread_mutex_unlock(client->deadmutex);
+    assert(ret == 0);
+
+    printf("Set subscriber '%s' to dead\n", sub->name);
     return 0;
 }
 

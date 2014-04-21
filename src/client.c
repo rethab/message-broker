@@ -76,12 +76,17 @@ int main(int argc, char *argv[]) {
     int nbytes;
     char buf[1024];
     while (1) {
-        nbytes = read(sockfd, &buf, 1024);
-        if (nbytes == -1) 
+        nbytes = read(sockfd, &buf, 1023);
+        if (nbytes == -1) {
             fprintf(stderr, "Error: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        } else if (nbytes == 0) {
+            printf("Done\n");
+            break;
+        }
 
         buf[nbytes] = '\0';
-        printf("Read From Server: '%s'\n", buf);
+        printf("Read From Server: '%s'\n", buf, nbytes);
     }
     return 0;
 }

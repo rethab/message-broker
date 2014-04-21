@@ -15,13 +15,13 @@ static void set_client_dead(struct client *client) {
     int ret;
 
     // acquire dead write lock
-    ret = pthread_rwlock_wrlock(client->deadrwlock);
+    ret = pthread_mutex_lock(client->deadmutex);
     assert(ret == 0);
 
     client->dead = 1;
 
     // release dead write lock
-    ret = pthread_rwlock_unlock(client->deadrwlock);
+    ret = pthread_mutex_unlock(client->deadmutex);
     assert(ret == 0);
 }
 
@@ -38,14 +38,14 @@ int socket_read_command(struct client *client,
     ret = pthread_mutex_lock(client->mutex_r);
     assert(ret == 0);
 
-    // acquire deadrwlock 
-    ret = pthread_rwlock_rdlock(client->deadrwlock);
+    // acquire deadmutex 
+    ret = pthread_mutex_lock(client->deadmutex);
     assert(ret == 0);
 
     int dead = client->dead;
 
-    // release deadrwlock
-    ret = pthread_rwlock_unlock(client->deadrwlock);
+    // release deadmutex
+    ret = pthread_mutex_unlock(client->deadmutex);
     assert(ret == 0);
 
     if (dead) {
@@ -122,14 +122,14 @@ int socket_send_command(struct client *client, struct stomp_command cmd) {
     ret = pthread_mutex_lock(client->mutex_w);
     assert(ret == 0);
 
-    // acquire deadrwlock 
-    ret = pthread_rwlock_rdlock(client->deadrwlock);
+    // acquire deadmutex 
+    ret = pthread_mutex_lock(client->deadmutex);
     assert(ret == 0);
 
     int dead = client->dead;
 
-    // release deadrwlock
-    ret = pthread_rwlock_unlock(client->deadrwlock);
+    // release deadmutex
+    ret = pthread_mutex_unlock(client->deadmutex);
     assert(ret == 0);
 
     if (dead) {
@@ -164,13 +164,13 @@ int socket_terminate_client(struct client *client) {
     int ret;
 
     // acquire write lock on dead variable
-    ret = pthread_rwlock_wrlock(client->deadrwlock);
+    ret = pthread_mutex_lock(client->deadmutex);
     assert(ret == 0);
 
     client->dead = 1; // may already be the case though
 
     // release lock for dead flag
-    ret = pthread_rwlock_unlock(client->deadrwlock);
+    ret = pthread_mutex_unlock(client->deadmutex);
     assert(ret == 0);
 
     // may fail if already closed
@@ -183,9 +183,13 @@ int client_init(struct client *client) {
 
     int ret;
 
-    pthread_rwlock_t *deadrwlock = malloc(sizeof(pthread_rwlock_t));
-    assert(deadrwlock != NULL);
-    ret = pthread_rwlock_init(deadrwlock, NULL);
+    pthread_mutexattr_t attr;
+    ret = pthread_mutexattr_init(&attr);
+    assert(ret == 0);
+    ret = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_t *deadmutex = malloc(sizeof(pthread_mutex_t));
+    assert(deadmutex != NULL);
+    ret = pthread_mutex_init(deadmutex, &attr);
     assert(ret == 0);
     
     pthread_mutex_t *mutex_r = malloc(sizeof(pthread_mutex_t));
@@ -199,7 +203,7 @@ int client_init(struct client *client) {
     assert(ret == 0);
 
     client->dead = 0;
-    client->deadrwlock = deadrwlock;
+    client->deadmutex = deadmutex;
     client->mutex_r = mutex_r;
     client->mutex_w = mutex_w;
 
@@ -218,7 +222,7 @@ void client_destroy(struct client *client) {
     assert(ret == 0);
     free(client->mutex_w);
 
-    ret = pthread_rwlock_destroy(client->deadrwlock);
+    ret = pthread_mutex_destroy(client->deadmutex);
     assert(ret == 0);
-    free(client->deadrwlock);
+    free(client->deadmutex);
 }

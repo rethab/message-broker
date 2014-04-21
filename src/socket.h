@@ -30,8 +30,27 @@ struct client {
     /* socket to client */
     int sockfd;
 
-    /* guards the dead flag */
-    pthread_rwlock_t *deadrwlock;
+    /* guards the dead flag.
+     * this is a mutex rather than an
+     * rwlock, because with the current
+     * program design, a recursive 
+     * lock is required when setting
+     * the state to dead (this is
+     * probably a design flaw): 
+     * the functions that handles the
+     * clients must set the state to
+     * dead and send the RECEIPT message
+     * to the client. when sending the
+     * receipt, the socket send function
+     * will have to check the dead flag
+     * and therefore try to lock the
+     * the flag again, which doesn't
+     * work with rwlocks. the write lock
+     * is required, because as soon as
+     * the receipt message is off to the
+     * client, no more messages must be
+     * sent off to it. */
+    pthread_mutex_t *deadmutex;
 
     /* indicates whether the connection
      * to the client is dead. this lock

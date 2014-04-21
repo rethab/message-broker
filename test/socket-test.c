@@ -212,6 +212,23 @@ void test_terminate_client() {
     client_destroy(&client);
 }
 
+void test_deadmutex_recursiveness() {
+    int ret;
+
+    struct client client;
+    client_init(&client);
+    
+    ret = pthread_mutex_lock(client.deadmutex);   
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+    pthread_mutex_lock(client.deadmutex);   
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    ret = pthread_mutex_unlock(client.deadmutex);
+    ret = pthread_mutex_unlock(client.deadmutex);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+    client_destroy(&client);
+}
+
 
 void socket_test_suite() {
     CU_pSuite socketSuite = CU_add_suite("socket", NULL, NULL);
@@ -229,4 +246,6 @@ void socket_test_suite() {
         test_terminate_client);
     CU_add_test(socketSuite, "test_send_invalid_command",
         test_send_invalid_command);
+    CU_add_test(socketSuite, "test_deadmutex_recursiveness",
+        test_deadmutex_recursiveness);
 }

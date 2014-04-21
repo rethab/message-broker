@@ -6,6 +6,7 @@
 #include "distributor.h"
 #include "socket.h"
 #include "stomp.h"
+#include "broker.h"
 
 /* returns timestamp */
 static long now() {
@@ -15,7 +16,16 @@ static long now() {
 }
 
 void *distributor_main_loop(void *arg) {
-    return 0;   
+    struct broker_context *ctx = arg;
+
+    while (1) {
+        printf("Distributor: Delivering messages\n");
+        deliver_messages(ctx->messages);
+
+        printf("Distributor: Falling asleep\n");
+        sleep(1);
+        printf("Distributor: Waking up\n");
+    }
 }
 
 /* at least read lock must be held by calling function */
@@ -66,15 +76,15 @@ static void deliver_message(struct message *msg,
     }
 }
 
-void deliver_messages(struct list messages) {
+void deliver_messages(struct list *messages) {
 
     int ret;
 
     // acquire read lock for list of messages
-    ret = pthread_rwlock_rdlock(messages.listrwlock);
+    ret = pthread_rwlock_rdlock(messages->listrwlock);
     assert(ret == 0);
 
-    struct node *curMsg = messages.root;
+    struct node *curMsg = messages->root;
     while (curMsg != NULL) {
         struct message *msg = curMsg->entry;
 
@@ -122,6 +132,6 @@ void deliver_messages(struct list messages) {
     }
 
     // release read lock for list of messages
-    ret = pthread_rwlock_unlock(messages.listrwlock);
+    ret = pthread_rwlock_unlock(messages->listrwlock);
     assert(ret == 0);
 }
