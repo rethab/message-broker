@@ -1,6 +1,6 @@
 CFLAGS=-Isrc -std=c99 -D_XOPEN_SOURCE=700 -Wall -lpthread 
 TEST_CFLAGS=-Itest -lcunit -g -rdynamic -ftest-coverage -fprofile-arcs -lgcov
-PROD_CFLAGS=-DNDEBUG
+PROD_CFLAGS=-DNDEBUG -Wno-unused-but-set-variable -Wno-unused-variable
 
 server: CFLAGS += $(PROD_CFLAGS)
 server: topic stomp broker socket distributor gc
