@@ -22,3 +22,4 @@ src/client
 *.gcno
 coverage
 coverage.info
+src/server
