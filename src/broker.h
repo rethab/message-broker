@@ -13,6 +13,14 @@ struct broker_context {
     struct list *messages;
 };
 
+/* params passed to handler thread */
+struct handler_params {
+    /* global ctx */
+    struct broker_context *ctx;
+    /* socket to listen on for clients */
+    int sock;
+};
+
 /* initializes a broker context */
 int broker_context_init(struct broker_context *ctx);
 
@@ -57,7 +65,8 @@ int main_loop(struct broker_context *ctx,
               int *connected,
               struct subscriber *sub);
 
-/* main loop for client. reads commands */
-void handle_client(struct broker_context *ctx, int sockfd);
+/* main loop for client. reads commands, accepts
+ * parameter of type 'struct handler_params' */
+void * handle_client(void *handler_thread_params);
 
 #endif

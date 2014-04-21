@@ -31,4 +31,8 @@ int gc_remove_eligible_stats(struct list *messages,
 int gc_remove_eligible_msgs(struct list *messages,
                             struct list *eligible);
 
+/* main loop that runs gc functions. accepts
+ * param of type 'struct broker_context' */
+void *gc_main_loop(void *arg);
+
 #endif

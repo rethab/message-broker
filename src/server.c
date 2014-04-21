@@ -12,9 +12,10 @@
 #include <assert.h>
 #include <pthread.h>
 
-#include "stomp.h"
 #include "topic.h"
 #include "broker.h"
+#include "gc.h"
+#include "distributor.h"
 
 #define MAXPENDING 10
 #define BUFSIZE    1024
@@ -22,10 +23,22 @@
 #define EXIT    1
 #define NO_EXIT 0
 
-void show_error(int mode) {
+void show_error() {
     fprintf(stderr, "Error: %s\n", strerror(errno));
-    if (mode == EXIT) exit(EXIT_FAILURE);
 }
+
+/* starts the socket listener, waits for
+ * incoming clients and accepts commands
+ * from them.
+ */
+int handle_clients(int port, struct broker_context *ctx);
+
+/* starts the garbage collecting thread */
+int start_gc(struct broker_context *ctx);
+
+/* starts the distributor thread */
+int start_distributor(struct broker_context *ctx);
+
 
 int main(int argc, char** argv) {
     if (argc != 2) {
@@ -34,48 +47,87 @@ int main(int argc, char** argv) {
     }
 
     int port = atoi(argv[1]);
-    int sock, cli, ret;
-    struct sockaddr_in srvaddr, clientaddr;
-    socklen_t clilen = sizeof(clientaddr);
 
-    // init shared structures
-    struct list messages;
-    list_init(&messages);
-    struct list topics;
-    list_init(&topics);
+    struct broker_context ctx;
+    broker_context_init(&ctx);
+
+    if (handle_clients(port, &ctx) == 0 &&
+        start_gc(&ctx) == 0 &&
+        start_distributor(&ctx) == 0) {
+        printf("All components started successfully\n");
+    } else {
+        printf("Aborting..\n");
+        broker_context_destroy(&ctx);
+        exit(EXIT_FAILURE);
+    }
+}
+
+static void * start_handler(void *arg) {
+    int cli, ret;
+    struct sockaddr_in clientaddr;
+    socklen_t clilen = sizeof(clientaddr);
+    struct handler_params *params = arg;
+
+    while (1) {
+        cli = accept(params->sock,
+                     (struct sockaddr *) &clientaddr,
+                     &clilen);
+        if (cli == -1) {
+            show_error();
+            continue;
+        }
+
+        struct handler_params client_handler_params;
+        client_handler_params.ctx = params->ctx;
+        client_handler_params.sock = cli;
+
+        pthread_t handler_thread;
+        ret = pthread_create(&handler_thread, NULL,
+            &handle_client, &client_handler_params);
+        assert(ret == 0);
+    }
+}
+
+int handle_clients(int port, struct broker_context *ctx) {
+    printf("Starting client handler..\n");
+
+    int sock, ret;
+    struct sockaddr_in srvaddr;
+    pthread_t thread;
+    struct handler_params params;
 
     // init socket
     sock  = socket(PF_INET, SOCK_STREAM, 0);
-    if (sock <= 0) show_error(EXIT);
+    if (ret != 0) { show_error(); return -1; }
+
     memset(&srvaddr, 0, sizeof(srvaddr));
     srvaddr.sin_family = AF_INET;
     srvaddr.sin_addr.s_addr = INADDR_ANY;
     srvaddr.sin_port = htons(port);
+
     ret = bind(sock, (struct sockaddr *) &srvaddr, sizeof(srvaddr));
-    if (ret != 0) show_error(EXIT);
+    if (ret != 0) { show_error(); return -1; }
+
     ret = listen(sock, MAXPENDING);
-    if (ret != 0) show_error(EXIT);
-    printf("Waitng for clients to connect on port %d\n", port);
+    if (ret != 0) { show_error(); return -1; }
 
-    while (1) {
-        cli = accept(sock, (struct sockaddr *) &clientaddr, &clilen);
-        if (cli == -1) {
-            show_error(NO_EXIT);
-            continue;
-        }
+    params.ctx = ctx;
+    params.sock = sock;
 
-        pthread_mutex_t mutex_w = PTHREAD_MUTEX_INITIALIZER;
-        pthread_mutex_t mutex_r = PTHREAD_MUTEX_INITIALIZER;
-        struct client client;
-        client.mutex_w = &mutex_w;
-        client.mutex_r = &mutex_r;
-        client.sockfd = cli;
-        struct worker_params params = {&client, &topics, &messages };
-        handle_client(params);
-    }
+    pthread_create(&thread, NULL, &start_handler, &params);
+    if (ret != 0) { show_error(); return -1; }
 
-    // TODO handle ctrl-c
-    close(sock);
+    printf("Waiting for clients to connect on port %d\n", port);
 
-    exit(EXIT_SUCCESS);
+    return 0;
+}
+
+int start_gc(struct broker_context *ctx) {
+    pthread_t thread;
+    return pthread_create(&thread, NULL, &gc_main_loop, ctx);
+}
+
+int start_distributor(struct broker_context *ctx) {
+    pthread_t thread;
+    return pthread_create(&thread, NULL, &distributor_main_loop, ctx);
 }

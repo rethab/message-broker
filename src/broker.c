@@ -161,7 +161,10 @@ int main_loop(struct broker_context *ctx,
     }
 }
 
-void handle_client(struct broker_context *ctx, int sockfd) {
+void * handle_client(void *handler_thread_params) {
+    struct handler_params *params = handler_thread_params;
+    struct broker_context *ctx = params->ctx;
+    int sockfd = params->sock;
 
     int ret;
     struct client client;
@@ -178,4 +181,6 @@ void handle_client(struct broker_context *ctx, int sockfd) {
     socket_terminate_client(&client);
 
     client_destroy(&client);
+
+    return 0;
 }

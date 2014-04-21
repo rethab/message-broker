@@ -246,12 +246,15 @@ void test_handle_client() {
     struct list topics;
     struct list messages;
     int fds[2];
+    struct handler_params hparams;
 
     assert(0 == socketpair(AF_UNIX, SOCK_STREAM, 0, fds));
     list_init(&messages);
     list_init(&topics);
     ctx.topics = &topics;
     ctx.messages = &messages;
+    hparams.sock = fds[0];
+    hparams.ctx = &ctx;
 
     char cmd1[] = "CONNECT\nlogin:foo\n\n";
     char cmd2[] = "SUBSCRIBE\ndestination:stocks\n\n";
@@ -262,7 +265,7 @@ void test_handle_client() {
     assert(0 < write(fds[1], cmd2, strlen(cmd2)+1));
     assert(0 < write(fds[1], cmd3, strlen(cmd3)+1));
     assert(0 < write(fds[1], cmd4, strlen(cmd4)+1));
-    handle_client(&ctx, fds[0]);
+    handle_client(&hparams);
 
     size_t resp1len = strlen("CONNECTED\n\n") + 1; // after CONNECT
     char resp1[32]; 
@@ -313,11 +316,14 @@ void test_handle_client_dead() {
     struct list topics;
     struct list messages;
     int fds[2];
+    struct handler_params hparams;
 
     ctx.topics = &topics;
     ctx.messages = &messages;
+    hparams.sock = fds[0];
+    hparams.ctx = &ctx;
 
-    handle_client(&ctx, fds[0]);
+    handle_client(&hparams);
 
     // no assertions, but would block
     // if it was not working
@@ -328,19 +334,22 @@ void test_handle_client_too_much() {
     struct list topics;
     struct list messages;
     int fds[2];
+    struct handler_params hparams;
 
     assert(0 == socketpair(AF_UNIX, SOCK_STREAM, 0, fds));
     list_init(&messages);
     list_init(&topics);
     ctx.topics = &topics;
     ctx.messages = &messages;
+    hparams.sock = fds[0];
+    hparams.ctx = &ctx;
 
     char *cmd = malloc(4096);
     memset(cmd, 1, 4095);
     cmd[4095] = '\0';
 
     assert(0 < write(fds[1], cmd, 4096));
-    handle_client(&ctx, fds[0]);
+    handle_client(&hparams);
 
     // should have been closed
     CU_ASSERT_EQUAL_FATAL(-1, close(fds[0]));

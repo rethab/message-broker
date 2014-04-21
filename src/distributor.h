@@ -24,5 +24,9 @@
  * time or because it is eligible to be resent.
  */
 void deliver_messages(struct list messages);
+
+/* main loop that runs distributor functions. accepts
+ * param of type 'struct broker_context' */
+void *distributor_main_loop(void *arg);
  
 #endif

@@ -3,6 +3,10 @@
 
 #include "gc.h"
 
+void *gc_main_loop(void *arg) {
+    return 0;   
+}
+
 int gc_eligible_stat(struct msg_statistics *stat) {
 
     int ret; // return value from other functions

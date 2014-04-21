@@ -7,10 +7,15 @@
 #include "socket.h"
 #include "stomp.h"
 
+/* returns timestamp */
 static long now() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return tv.tv_sec;
+}
+
+void *distributor_main_loop(void *arg) {
+    return 0;   
 }
 
 /* at least read lock must be held by calling function */
