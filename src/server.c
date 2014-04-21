@@ -9,7 +9,6 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
-#include <assert.h>
 #include <pthread.h>
 
 #include "topic.h"
@@ -63,7 +62,7 @@ int main(int argc, char** argv) {
 }
 
 static void * start_handler(void *arg) {
-    int cli, ret;
+    int cli;
     struct sockaddr_in clientaddr;
     socklen_t clilen = sizeof(clientaddr);
     struct handler_params *params = arg;
@@ -82,10 +81,11 @@ static void * start_handler(void *arg) {
         client_handler_params.sock = cli;
 
         pthread_t handler_thread;
-        ret = pthread_create(&handler_thread, NULL,
+        pthread_create(&handler_thread, NULL,
             &handle_client, &client_handler_params);
-        assert(ret == 0);
     }
+
+    return 0;
 }
 
 int handle_clients(int port, struct broker_context *ctx) {
@@ -98,7 +98,7 @@ int handle_clients(int port, struct broker_context *ctx) {
 
     // init socket
     sock  = socket(PF_INET, SOCK_STREAM, 0);
-    if (ret != 0) { show_error(); return -1; }
+    if (sock < 0) { show_error(); return -1; }
 
     memset(&srvaddr, 0, sizeof(srvaddr));
     srvaddr.sin_family = AF_INET;
