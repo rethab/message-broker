@@ -22,8 +22,9 @@
 #define EXIT    1
 #define NO_EXIT 0
 
-void show_error() {
-    fprintf(stderr, "Error: %s\n", strerror(errno));
+void show_error(char *fun) {
+    fprintf(stderr, "Function %s returned error: %s\n",
+        fun, strerror(errno));
 }
 
 /* starts the socket listener, waits for
@@ -81,9 +82,11 @@ static void * start_handler(void *arg) {
                      (struct sockaddr *) &clientaddr,
                      &clilen);
         if (cli == -1) {
-            show_error();
+            show_error("start_handler/accept");
             continue;
         }
+
+        printf("New client %s\n", inet_ntoa(clientaddr.sin_addr));
 
         struct handler_params client_handler_params;
         client_handler_params.ctx = params->ctx;
@@ -100,31 +103,36 @@ static void * start_handler(void *arg) {
 int handle_clients(int port, struct broker_context *ctx) {
     printf("Starting client handler.. \n");
 
-    int sock, ret;
+    int sockfd, ret;
     struct sockaddr_in srvaddr;
-    struct handler_params params;
+    struct handler_params *params =
+        malloc(sizeof(struct handler_params));
+    if (params == NULL) {
+        show_error("handle_clients/socket");
+        return -1;
+    }
 
     // init socket
-    sock  = socket(PF_INET, SOCK_STREAM, 0);
-    if (sock < 0) { show_error(); return -1; }
+    sockfd = socket(PF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) { show_error("handle_clients/socket"); return -1; }
 
     memset(&srvaddr, 0, sizeof(srvaddr));
     srvaddr.sin_family = AF_INET;
     srvaddr.sin_addr.s_addr = INADDR_ANY;
     srvaddr.sin_port = htons(port);
 
-    ret = bind(sock, (struct sockaddr *) &srvaddr, sizeof(srvaddr));
-    if (ret != 0) { show_error(); return -1; }
+    ret = bind(sockfd, (struct sockaddr *) &srvaddr, sizeof(srvaddr));
+    if (ret != 0) { show_error("handle_clients/bind"); return -1; }
 
-    ret = listen(sock, MAXPENDING);
-    if (ret != 0) { show_error(); return -1; }
+    ret = listen(sockfd, MAXPENDING);
+    if (ret != 0) { show_error("handle_clients/listen"); return -1; }
 
-    params.ctx = ctx;
-    params.sock = sock;
+    params->ctx = ctx;
+    params->sock = sockfd;
 
-    ret = pthread_create(&handler_thread, NULL, &start_handler, &params);
+    ret = pthread_create(&handler_thread, NULL, &start_handler, params);
     if (ret != 0) {
-        show_error();
+        show_error("handle_clients/pthread_create");
         fprintf(stderr, "Failed to start client handler\n");
         return -1;
     } else {
@@ -141,7 +149,7 @@ int start_gc(struct broker_context *ctx) {
 
     ret = pthread_create(&gc_thread, NULL, &gc_main_loop, ctx);
     if (ret != 0) {
-        show_error();
+        show_error("start_gc/pthread_create");
         fprintf(stderr, "Failed to start gc\n");
         return -1;
     } else {
@@ -158,7 +166,7 @@ int start_distributor(struct broker_context *ctx) {
     ret = pthread_create(&distributor_thread, NULL,
         &distributor_main_loop, ctx);
     if (ret != 0) {
-        show_error();
+        show_error("start_distributor/pthread_create");
         fprintf(stderr, "Failed to start distributor\n");
         return -1;
     } else {
