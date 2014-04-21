@@ -114,20 +114,48 @@ int handle_clients(int port, struct broker_context *ctx) {
     params.ctx = ctx;
     params.sock = sock;
 
-    pthread_create(&thread, NULL, &start_handler, &params);
-    if (ret != 0) { show_error(); return -1; }
-
-    printf("Waiting for clients to connect on port %d\n", port);
-
-    return 0;
+    ret = pthread_create(&thread, NULL, &start_handler, &params);
+    if (ret != 0) {
+        show_error();
+        fprintf(stderr, "Failed to start client handler\n");
+        return -1;
+    } else {
+        printf("Waiting for clients to connect on port %d\n", port);
+        printf("Successfully started client handler\n");
+        return 0;
+    }
 }
 
 int start_gc(struct broker_context *ctx) {
+    int ret;
+
+    printf("Starting gc..\n");
+
     pthread_t thread;
-    return pthread_create(&thread, NULL, &gc_main_loop, ctx);
+    ret = pthread_create(&thread, NULL, &gc_main_loop, ctx);
+    if (ret != 0) {
+        show_error();
+        fprintf(stderr, "Failed to start gc\n");
+        return -1;
+    } else {
+        printf("Successfully started gc\n");
+        return 0;
+    }
 }
 
 int start_distributor(struct broker_context *ctx) {
+    int ret;
+
+    printf("Starting distributor..\n");
+
     pthread_t thread;
-    return pthread_create(&thread, NULL, &distributor_main_loop, ctx);
+    ret = pthread_create(&thread, NULL, &distributor_main_loop, ctx);
+    if (ret != 0) {
+        show_error();
+        fprintf(stderr, "Failed to start distributor\n");
+        return -1;
+    } else {
+        printf("Successfully started distributor\n");
+        return 0;
+    }
 }
