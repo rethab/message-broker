@@ -64,11 +64,11 @@ int socket_read_command(struct client *client,
         // error
         if (ret != 1) {
 
+            fprintf(stderr, "read: %s\n", strerror(errno));
+
             // early release lock 
             ret = pthread_mutex_unlock(client->mutex_r);
             assert(ret == 0);
-
-            fprintf(stderr, "read: %s\n", strerror(errno));
 
             set_client_dead(client);
 
@@ -183,13 +183,13 @@ int client_init(struct client *client) {
 
     int ret;
 
-    pthread_mutexattr_t attr;
-    ret = pthread_mutexattr_init(&attr);
+    pthread_mutexattr_t deadattr;
+    ret = pthread_mutexattr_init(&deadattr);
     assert(ret == 0);
-    ret = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    ret = pthread_mutexattr_settype(&deadattr, PTHREAD_MUTEX_RECURSIVE);
     pthread_mutex_t *deadmutex = malloc(sizeof(pthread_mutex_t));
     assert(deadmutex != NULL);
-    ret = pthread_mutex_init(deadmutex, &attr);
+    ret = pthread_mutex_init(deadmutex, &deadattr);
     assert(ret == 0);
     
     pthread_mutex_t *mutex_r = malloc(sizeof(pthread_mutex_t));
@@ -197,9 +197,13 @@ int client_init(struct client *client) {
     ret = pthread_mutex_init(mutex_r, NULL);
     assert(ret == 0);
 
+    pthread_mutexattr_t wmutattr;
+    ret = pthread_mutexattr_init(&wmutattr);
+    assert(ret == 0);
+    ret = pthread_mutexattr_settype(&wmutattr, PTHREAD_MUTEX_RECURSIVE);
     pthread_mutex_t *mutex_w = malloc(sizeof(pthread_mutex_t));
     assert(mutex_w != NULL);
-    ret = pthread_mutex_init(mutex_w, NULL);
+    ret = pthread_mutex_init(mutex_w, &wmutattr);
     assert(ret == 0);
 
     client->dead = 0;

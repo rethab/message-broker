@@ -114,7 +114,9 @@ int process_disconnect(struct broker_context *ctx,
                        struct subscriber *sub) {
     int ret;
 
-    // acquire lock for dead flag
+    // acquire both locks for dead flag
+    ret = pthread_mutex_lock(client->mutex_w);
+    assert(ret == 0);
     ret = pthread_mutex_lock(client->deadmutex);
     assert(ret == 0);
 
@@ -133,8 +135,10 @@ int process_disconnect(struct broker_context *ctx,
     client->dead = 1;
 
 
-    // release lock for dead flag
+    // release both locks for dead flag
     ret = pthread_mutex_unlock(client->deadmutex);
+    assert(ret == 0);
+    ret = pthread_mutex_unlock(client->mutex_w);
     assert(ret == 0);
 
     printf("Set subscriber '%s' to dead\n", sub->name);
