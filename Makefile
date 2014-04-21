@@ -45,3 +45,5 @@ clean:
 	rm -fv coverage.info
 	rm -fv {src/,}*.gcda
 	rm -fv {src/,}*.gcno
+	rm -fv src/server
+	rm -fv src/client
