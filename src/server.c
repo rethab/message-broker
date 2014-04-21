@@ -38,6 +38,11 @@ int start_gc(struct broker_context *ctx);
 /* starts the distributor thread */
 int start_distributor(struct broker_context *ctx);
 
+/* threads for all components */
+static pthread_t handler_thread;
+static pthread_t gc_thread;
+static pthread_t distributor_thread;
+
 
 int main(int argc, char** argv) {
     if (argc != 2) {
@@ -59,6 +64,10 @@ int main(int argc, char** argv) {
         broker_context_destroy(&ctx);
         exit(EXIT_FAILURE);
     }
+
+    pthread_join(handler_thread, NULL);
+    pthread_join(gc_thread, NULL);
+    pthread_join(distributor_thread, NULL);
 }
 
 static void * start_handler(void *arg) {
@@ -93,7 +102,6 @@ int handle_clients(int port, struct broker_context *ctx) {
 
     int sock, ret;
     struct sockaddr_in srvaddr;
-    pthread_t thread;
     struct handler_params params;
 
     // init socket
@@ -114,7 +122,7 @@ int handle_clients(int port, struct broker_context *ctx) {
     params.ctx = ctx;
     params.sock = sock;
 
-    ret = pthread_create(&thread, NULL, &start_handler, &params);
+    ret = pthread_create(&handler_thread, NULL, &start_handler, &params);
     if (ret != 0) {
         show_error();
         fprintf(stderr, "Failed to start client handler\n");
@@ -131,8 +139,7 @@ int start_gc(struct broker_context *ctx) {
 
     printf("Starting gc.. ");
 
-    pthread_t thread;
-    ret = pthread_create(&thread, NULL, &gc_main_loop, ctx);
+    ret = pthread_create(&gc_thread, NULL, &gc_main_loop, ctx);
     if (ret != 0) {
         show_error();
         fprintf(stderr, "Failed to start gc\n");
@@ -148,8 +155,8 @@ int start_distributor(struct broker_context *ctx) {
 
     printf("Starting distributor.. ");
 
-    pthread_t thread;
-    ret = pthread_create(&thread, NULL, &distributor_main_loop, ctx);
+    ret = pthread_create(&distributor_thread, NULL,
+        &distributor_main_loop, ctx);
     if (ret != 0) {
         show_error();
         fprintf(stderr, "Failed to start distributor\n");
