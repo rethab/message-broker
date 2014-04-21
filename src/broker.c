@@ -8,6 +8,30 @@
 #include "topic.h"
 #include "broker.h"
 
+void * handle_client(void *handler_thread_params) {
+    struct handler_params *params = handler_thread_params;
+    struct broker_context *ctx = params->ctx;
+    int sockfd = params->sock;
+
+    int ret;
+    struct client client;
+    struct subscriber sub;
+    int connected = 0;
+
+    client_init(&client);
+    client.sockfd = sockfd;
+
+    do {
+        ret = main_loop(ctx, &client, &connected, &sub);
+    } while (ret == WORKER_CONTINUE);
+
+    socket_terminate_client(&client);
+
+    client_destroy(&client);
+
+    return 0;
+}
+
 int send_error(struct client *client, char *reason) {
     struct stomp_command respc;
     struct stomp_header header;
@@ -157,30 +181,31 @@ int main_loop(struct broker_context *ctx,
         } else {
             // impossible, socket read would have failed
             assert(0);
+            return WORKER_STOP;
         }
     }
 }
 
-void * handle_client(void *handler_thread_params) {
-    struct handler_params *params = handler_thread_params;
-    struct broker_context *ctx = params->ctx;
-    int sockfd = params->sock;
-
+int broker_context_init(struct broker_context *ctx) {
     int ret;
-    struct client client;
-    struct subscriber sub;
-    int connected = 0;
 
-    client_init(&client);
-    client.sockfd = sockfd;
+    ret = list_init(ctx->messages);
+    assert(ret == 0);
 
-    do {
-        ret = main_loop(ctx, &client, &connected, &sub);
-    } while (ret == WORKER_CONTINUE);
+    ret = list_init(ctx->topics);
+    assert(ret == 0);
 
-    socket_terminate_client(&client);
+    return 0;
+}
 
-    client_destroy(&client);
+int broker_context_destroy(struct broker_context *ctx) {
+    int ret;
+
+    ret = list_destroy(ctx->messages);
+    assert(ret == 0);
+
+    ret = list_destroy(ctx->topics);
+    assert(ret == 0);
 
     return 0;
 }
