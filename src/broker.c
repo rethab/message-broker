@@ -189,9 +189,13 @@ int main_loop(struct broker_context *ctx,
 int broker_context_init(struct broker_context *ctx) {
     int ret;
 
+    ctx->messages = malloc(sizeof(struct list));
+    assert(ctx->messages != NULL);
     ret = list_init(ctx->messages);
     assert(ret == 0);
 
+    ctx->topics = malloc(sizeof(struct list));
+    assert(ctx->topics != NULL);
     ret = list_init(ctx->topics);
     assert(ret == 0);
 
@@ -203,9 +207,13 @@ int broker_context_destroy(struct broker_context *ctx) {
 
     ret = list_destroy(ctx->messages);
     assert(ret == 0);
+    free(ctx->messages);
+    ctx->messages = NULL;
 
     ret = list_destroy(ctx->topics);
     assert(ret == 0);
+    free(ctx->topics);
+    ctx->topics = NULL;
 
     return 0;
 }

@@ -355,6 +355,27 @@ void test_handle_client_too_much() {
     CU_ASSERT_EQUAL_FATAL(-1, close(fds[0]));
 }
 
+void test_init_destory_context() {
+    int ret;
+
+    struct broker_context ctx;
+    struct message msg;
+    struct topic topic;
+
+    ret = broker_context_init(&ctx);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    ret = list_add(ctx.messages, &msg);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    ret = list_add(ctx.topics, &topic);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+    
+    assert(0 == list_remove(ctx.messages, &msg));
+    assert(0 == list_remove(ctx.topics, &topic));
+    ret = broker_context_destroy(&ctx);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+}
 
 void broker_test_suite() {
     CU_pSuite socketSuite = CU_add_suite("broker", NULL, NULL);
@@ -377,4 +398,7 @@ void broker_test_suite() {
     CU_add_test(socketSuite,
         "test_handle_client_first_command_not_connect",
         test_handle_client_first_command_not_connect);
+    CU_add_test(socketSuite,
+        "test_init_destory_context",
+        test_init_destory_context);
 }
