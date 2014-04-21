@@ -89,7 +89,7 @@ static void * start_handler(void *arg) {
 }
 
 int handle_clients(int port, struct broker_context *ctx) {
-    printf("Starting client handler..\n");
+    printf("Starting client handler.. \n");
 
     int sock, ret;
     struct sockaddr_in srvaddr;
@@ -129,7 +129,7 @@ int handle_clients(int port, struct broker_context *ctx) {
 int start_gc(struct broker_context *ctx) {
     int ret;
 
-    printf("Starting gc..\n");
+    printf("Starting gc.. ");
 
     pthread_t thread;
     ret = pthread_create(&thread, NULL, &gc_main_loop, ctx);
@@ -138,7 +138,7 @@ int start_gc(struct broker_context *ctx) {
         fprintf(stderr, "Failed to start gc\n");
         return -1;
     } else {
-        printf("Successfully started gc\n");
+        printf("success\n");
         return 0;
     }
 }
@@ -146,7 +146,7 @@ int start_gc(struct broker_context *ctx) {
 int start_distributor(struct broker_context *ctx) {
     int ret;
 
-    printf("Starting distributor..\n");
+    printf("Starting distributor.. ");
 
     pthread_t thread;
     ret = pthread_create(&thread, NULL, &distributor_main_loop, ctx);
@@ -155,7 +155,7 @@ int start_distributor(struct broker_context *ctx) {
         fprintf(stderr, "Failed to start distributor\n");
         return -1;
     } else {
-        printf("Successfully started distributor\n");
+        printf("success\n");
         return 0;
     }
 }
