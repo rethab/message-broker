@@ -277,12 +277,9 @@ int topic_add_message(struct list *topics, struct list *messages,
     if (val == 0) {
         // message
         struct message *msg = malloc(sizeof(struct message));
-        assert(msg != NULL);
+        message_init(msg);
         msg->content = strdup(content);
         msg->topicname = strdup(topicname);
-        msg->stats = malloc(sizeof(struct list));
-        list_init(msg->stats);
-        assert(msg->stats != NULL);
 
         // statistics, subs from topic
         struct node *cur = topic->subscribers->root;
@@ -290,7 +287,7 @@ int topic_add_message(struct list *topics, struct list *messages,
             struct subscriber *sub = cur->entry;
             struct msg_statistics *stat =
                 malloc(sizeof(struct msg_statistics));
-            assert(stat != NULL);
+            msg_statistics_init(stat);
             stat->last_fail = 0;
             stat->nattempts = 0;
             stat->subscriber = sub;

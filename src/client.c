@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
         }
 
         buf[nbytes] = '\0';
-        printf("Read From Server: '%s'\n", buf, nbytes);
+        printf("Read From Server: '%s'\n", buf);
     }
     return 0;
 }

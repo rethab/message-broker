@@ -15,20 +15,18 @@ void * handle_client(void *handler_thread_params) {
     int sockfd = params->sock;
 
     int ret;
-    struct client client;
-    struct subscriber sub;
+    struct client *client = malloc(sizeof(struct client));
+    struct subscriber *sub = malloc(sizeof(struct subscriber));
     int connected = 0;
 
-    client_init(&client);
-    client.sockfd = sockfd;
+    client_init(client);
+    client->sockfd = sockfd;
 
     do {
-        ret = main_loop(ctx, &client, &connected, &sub);
+        ret = main_loop(ctx, client, &connected, sub);
     } while (ret == WORKER_CONTINUE);
 
-    socket_terminate_client(&client);
-
-    client_destroy(&client);
+    socket_terminate_client(client);
 
     return 0;
 }

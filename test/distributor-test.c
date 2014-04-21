@@ -22,8 +22,10 @@ static struct msg_statistics stat2;
 static struct msg_statistics stat3;
 static struct subscriber sub1;
 static struct subscriber sub2;
+static struct subscriber sub3;
 static struct client client1;
 static struct client client2;
+static struct client client3;
 static int fds1[2];
 static int fds2[2];
 
@@ -51,9 +53,12 @@ static int before_test() {
     socketpair(AF_UNIX, SOCK_STREAM, 0, fds1);
     socketpair(AF_UNIX, SOCK_STREAM, 0, fds2);
     client1.sockfd = fds1[0];
+    client1.dead = 0;
     client2.sockfd = fds2[0];
+    client2.dead = 0;
     sub1.client = &client1;
     sub2.client = &client2;
+    sub3.client = &client3;
     stat1.subscriber = &sub1;
     stat2.subscriber = &sub1;
     stat3.subscriber = &sub2;
@@ -157,10 +162,32 @@ void test_deliver_messages_not_eligible() {
     after_test();
 }
 
+void test_is_eligible() {
+    before_test();
+    // already successfully sent
+    stat1.nattempts = 1;
+    stat1.last_fail = 0;
+    CU_ASSERT_EQUAL_FATAL(0, is_eligible(&stat1));
+
+    // just tried: dont deliver
+    stat2.nattempts = 1;
+    long stat2_fail = now();
+    stat2.last_fail = stat2_fail;
+    CU_ASSERT_EQUAL_FATAL(0, is_eligible(&stat2));
+
+    // very long ago: deliver
+    stat3.nattempts = 3;
+    stat3.last_fail = now() - DAY;
+    CU_ASSERT_EQUAL_FATAL(1, is_eligible(&stat3));
+
+    after_test();
+}
+
 void test_deliver_message_already_delivered() {
     before_test();
     // already successfully sent
     stat1.nattempts = 1;
+    stat1.last_fail = 0;
 
     // just tried: dont deliver
     stat2.nattempts = 1;
@@ -210,6 +237,15 @@ void test_handle_closed_socket_and_dead_client() {
     after_test();
 }
 
+void test_dead_client_not_eligible() {
+    before_test();
+    
+    client1.dead = 1;
+    CU_ASSERT_EQUAL_FATAL(0, is_eligible(&stat1));
+    
+    after_test();   
+}
+
 void distributor_test_suite() {
     CU_pSuite distrSuite =
         CU_add_suite("distributor", NULL, NULL);
@@ -221,5 +257,8 @@ void distributor_test_suite() {
         test_handle_closed_socket_and_dead_client);
     CU_add_test(distrSuite, "test_deliver_message_already_delivered",
         test_deliver_message_already_delivered);
-
+    CU_add_test(distrSuite, "test_dead_client_not_eligible",
+        test_dead_client_not_eligible);
+    CU_add_test(distrSuite, "test_is_eligible",
+        test_is_eligible);
 }

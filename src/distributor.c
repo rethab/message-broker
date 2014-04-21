@@ -23,25 +23,45 @@ void *distributor_main_loop(void *arg) {
         deliver_messages(ctx->messages);
 
         printf("Distributor: Falling asleep\n");
-        sleep(1);
+        sleep(DISTRIBUTOR_SEND_TIMEOUT);
         printf("Distributor: Waking up\n");
     }
 }
 
 /* at least read lock must be held by calling function */
-static int is_eligible(struct msg_statistics *stat) {
+int is_eligible(struct msg_statistics *stat) {
+    
+    int ret;
+    long ts = now();
+
     // already successfully delivered
     if (stat->last_fail == 0 && stat->nattempts > 0) {
         return 0;
+    } else if ( ((ts - stat->last_fail) <= REDELIVERY_TIMEOUT) ||
+         (stat->nattempts >= MAX_ATTEMPTS)) {
+        return 0;
+    } else {
+
+        int val;
+        struct client *client = stat->subscriber->client; 
+
+        // lock dead flag to check if
+        ret = pthread_mutex_lock(client->deadmutex);
+        assert(ret == 0);
+        
+        if (client->dead) {
+            val = 0;
+        } else {
+            val = 1;
+        }
+
+        // lock dead flag to check if
+        ret = pthread_mutex_unlock(client->deadmutex);
+        assert(ret == 0);
+
+        return val;
     }
 
-    long ts = now();
-    if ( ((ts - stat->last_fail) > REDELIVERY_TIMEOUT) &&
-         (stat->nattempts < MAX_ATTEMPTS)) {
-        return 1;
-    } else {
-        return 0;
-    }
 }
 
 /* write lock must be held by calling function */

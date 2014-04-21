@@ -19,11 +19,20 @@
  */
 #define REDELIVERY_TIMEOUT 2
 
+/* time to wait for until another 
+ * attempt to send all messages to
+ * the subscribers is made */
+#define DISTRIBUTOR_SEND_TIMEOUT 1
+
 /* searches the list of messages for messages 
  * to be sent to a subscriber. this may be for the first
  * time or because it is eligible to be resent.
  */
 void deliver_messages(struct list *messages);
+
+/* tests whether the message is is eligible
+ * for redelivery to this client */
+int is_eligible(struct msg_statistics *stat);
 
 /* main loop that runs distributor functions. accepts
  * param of type 'struct broker_context' */

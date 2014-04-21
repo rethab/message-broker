@@ -217,12 +217,15 @@ void client_destroy(struct client *client) {
     ret = pthread_mutex_destroy(client->mutex_r);
     assert(ret == 0);
     free(client->mutex_r);
+    client->mutex_r = NULL;
 
     ret = pthread_mutex_destroy(client->mutex_w);
     assert(ret == 0);
     free(client->mutex_w);
+    client->mutex_w = NULL;
 
     ret = pthread_mutex_destroy(client->deadmutex);
     assert(ret == 0);
     free(client->deadmutex);
+    client->deadmutex = NULL;
 }

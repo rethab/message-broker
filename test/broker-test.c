@@ -11,6 +11,8 @@
 
 #include "../src/broker.h"
 #include "../src/topic.h"
+#include "../src/distributor.h"
+#include "../src/stomp.h"
 
 void test_send_error() {
 
@@ -214,7 +216,6 @@ void test_process_disconnect() {
     // topic is not deleted
     topic = topics.root->entry;
     CU_ASSERT_STRING_EQUAL_FATAL("stocks", topic->name);
-    CU_ASSERT_PTR_NULL(topic->subscribers->root);
     client_destroy(&client);
 }
 
@@ -377,6 +378,44 @@ void test_init_destory_context() {
     CU_ASSERT_EQUAL_FATAL(0, ret);
 }
 
+void test_deliver_after_disconnect() {
+    int ret;
+    struct stomp_command cmd;
+    struct stomp_header header;
+    struct broker_context ctx ;
+    struct subscriber sub;
+    struct client client;
+
+    cmd.name = strdup("SEND");
+    header.key = strdup("topic");
+    header.val = strdup("stocks");
+    cmd.headers = &header;
+    cmd.nheaders = 1;
+    cmd.content = strdup("price: 22.3");
+    broker_context_init(&ctx);
+    client_init(&client);
+    sub.name = strdup("foo");
+    sub.client = &client;
+
+    ret = process_subscribe(&ctx, cmd, &sub);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    ret = process_send(&ctx, &client, cmd);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    ret = process_disconnect(&ctx, &client, &sub);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    deliver_messages(ctx.messages);
+
+    CU_ASSERT_FATAL(client.dead);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(client.mutex_w);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(client.mutex_r);
+    CU_ASSERT_PTR_NOT_NULL_FATAL(client.deadmutex);
+
+    client_destroy(&client);
+}
+
 void broker_test_suite() {
     CU_pSuite socketSuite = CU_add_suite("broker", NULL, NULL);
     CU_add_test(socketSuite, "test_process_send", test_process_send);
@@ -398,7 +437,8 @@ void broker_test_suite() {
     CU_add_test(socketSuite,
         "test_handle_client_first_command_not_connect",
         test_handle_client_first_command_not_connect);
-    CU_add_test(socketSuite,
-        "test_init_destory_context",
+    CU_add_test(socketSuite, "test_init_destory_context",
         test_init_destory_context);
+    CU_add_test(socketSuite, "test_deliver_after_disconnect",
+        test_deliver_after_disconnect);
 }
