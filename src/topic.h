@@ -165,4 +165,7 @@ int list_remove(struct list *list, void *entry);
 /* checks whether the list is empty */
 int list_empty(struct list *list);
 
+/* empties the list */
+int list_clean(struct list *messages);
+
 #endif

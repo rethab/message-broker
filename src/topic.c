@@ -98,6 +98,17 @@ int list_remove(struct list *list, void *entry) {
     return list_remove_generic(list, list_cmp_same_ref, entry);
 }
 
+int list_clean(struct list *messages) {
+    struct node *cur = messages->root;
+    while (cur != NULL) {
+        struct node *next = cur->next;
+        free(cur);
+        cur = next;
+    }
+    messages->root = NULL;
+    return 0;
+}
+
 /* at least read lock for list of topics must be held by 
  * the funciton calling this function */
 static struct topic *find_topic(struct list *topics, char *name) {

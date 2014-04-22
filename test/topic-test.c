@@ -547,12 +547,35 @@ void test_topic_strerror() {
 
 }
 
+void test_list_clean() {
+    int ret;
+
+    struct list messages;
+    list_init(&messages);
+
+    struct message *m1 = malloc(sizeof(struct message));
+    struct message *m2 = malloc(sizeof(struct message));
+    message_init(m1);
+    message_init(m2);
+    list_add(&messages, m1);
+    list_add(&messages, m2);
+
+    ret = list_clean(&messages);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    CU_ASSERT_PTR_NULL_FATAL(messages.root);
+
+    list_destroy(&messages);
+}
+
 void topic_add_list_suite() {
     CU_pSuite listSuite = CU_add_suite("list", NULL, NULL);
     CU_add_test(listSuite, "test_add_remove_list",
         test_add_remove_list);
     CU_add_test(listSuite, "test_list_len",
         test_list_len);
+    CU_add_test(listSuite, "test_list_clean",
+        test_list_clean);
 }
 
 void topic_add_topic_suite() {
