@@ -166,6 +166,9 @@ int list_remove(struct list *list, void *entry);
 int list_empty(struct list *list);
 
 /* empties the list */
-int list_clean(struct list *messages);
+int list_clean(struct list *list);
+
+/* returns the number of elements in the list */
+int list_len(struct list *list);
 
 #endif

@@ -58,6 +58,17 @@ int list_empty(struct list *list) {
     return list->root == NULL;
 }
 
+/* returns the number of elements in a list */
+int list_len(struct list *list) {
+    struct node *cur = list->root;
+    int n = 0;
+    for (; cur != NULL; cur = cur->next) {
+        n++;
+    }
+    return n;
+}
+
+
 /* removes an element from the list based on the
  * compare function. the third arg is passed
  * to the compare function as the second parameter

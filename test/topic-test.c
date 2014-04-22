@@ -41,16 +41,6 @@ static struct message *message_find_by_content(struct list *messages,
     return NULL;
 }
 
-/* returns the number of elements in a list */
-static int list_len(struct list *list) {
-    struct node *cur = list->root;
-    int n = 0;
-    for (; cur != NULL; cur = cur->next) {
-        n++;
-    }
-    return n;
-}
-
 /* checks whether an entry exists */
 static int list_exists(struct list *list, void *entry) {
     struct node *cur = list->root;
@@ -63,6 +53,27 @@ static int list_exists(struct list *list, void *entry) {
 /* TESTS */
 
 void test_list_len() {
+    char a;
+    struct list list;
+
+    // delete in the middle
+    list_init(&list);
+    CU_ASSERT_EQUAL_FATAL(0, list_len(&list));
+
+    list_add(&list, &a);
+    CU_ASSERT_EQUAL_FATAL(1, list_len(&list));
+
+    list_add(&list, &a);
+    CU_ASSERT_EQUAL_FATAL(2, list_len(&list));
+
+    list_remove(&list, &a);
+    CU_ASSERT_EQUAL_FATAL(1, list_len(&list));
+
+    list_remove(&list, &a);
+    CU_ASSERT_EQUAL_FATAL(0, list_len(&list));
+}
+
+void test_list_empty() {
     char a;
     struct list list;
 
@@ -572,8 +583,8 @@ void topic_add_list_suite() {
     CU_pSuite listSuite = CU_add_suite("list", NULL, NULL);
     CU_add_test(listSuite, "test_add_remove_list",
         test_add_remove_list);
-    CU_add_test(listSuite, "test_list_len",
-        test_list_len);
+    CU_add_test(listSuite, "test_list_empty",
+        test_list_empty);
     CU_add_test(listSuite, "test_list_clean",
         test_list_clean);
 }
