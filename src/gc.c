@@ -1,11 +1,56 @@
 #include <assert.h>
 #include <pthread.h>
+#include <stdio.h>
 
 #include "gc.h"
+#include "broker.h"
 
 void *gc_main_loop(void *arg) {
-    return 0;   
+    struct broker_context *ctx = arg;
+
+    int ret;
+
+    while (1) {
+
+        ret = gc_run_gc(ctx);
+        assert(ret == 0);
+
+        sleep(GC_PASS_TIMEOUT);
+    }
+
+    return 0;
 }
+
+int gc_run_gc(struct broker_context *ctx) {
+    int ret;
+
+    struct list messages;
+    struct list stats;
+
+    list_init(&stats);
+    list_init(&messages);
+
+    ret = gc_collect_eligible_stats(ctx->messages, &stats);
+    assert(ret == 0);
+
+    ret = gc_remove_eligible_stats(ctx->messages, &stats);
+    assert(ret == 0);
+
+    ret = gc_collect_eligible_msgs(ctx->messages, &messages);
+    assert(ret == 0);
+
+    ret = gc_remove_eligible_msgs(ctx->messages, &messages);
+    assert(ret == 0);
+
+    list_clean(&stats);
+    list_clean(&messages);
+
+    list_destroy(&stats);
+    list_destroy(&messages);
+
+    return 0;
+}
+
 
 int gc_eligible_stat(struct msg_statistics *stat) {
 

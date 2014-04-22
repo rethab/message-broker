@@ -2,6 +2,13 @@
 #define GC_HEADER
 
 #include "distributor.h"
+#include "broker.h"
+
+/* time to wait for until another 
+ * attempt to clean all messages and
+ * statistics by the garbage
+ * collector is made. */
+#define GC_PASS_TIMEOUT 1
 
 /* checks whether a statistics is eligible to
  * be garbage collected */
@@ -30,6 +37,10 @@ int gc_remove_eligible_stats(struct list *messages,
  * parameter from the messages list */
 int gc_remove_eligible_msgs(struct list *messages,
                             struct list *eligible);
+
+/* runs the garbage collection once. to
+ * be invoked by 'gc_main_loop' continuously. */
+int gc_run_gc(struct broker_context *ctx);
 
 /* main loop that runs gc functions. accepts
  * param of type 'struct broker_context' */

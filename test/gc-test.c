@@ -10,6 +10,7 @@
 #include <CUnit/Basic.h>
 
 #include "../src/gc.h"
+#include "../src/broker.h"
 
 static long timestamp() {
     struct timeval tv;
@@ -297,6 +298,59 @@ void test_gc_remove_eligible_stats() {
 
 }
 
+void test_gc_run_gc() {
+    int ret;
+    struct broker_context ctx;
+    broker_context_init(&ctx);
+
+    // message to be removed in first pass
+    struct message msg1;
+    message_init(&msg1);
+    list_add(ctx.messages, &msg1);
+
+    // stat should be removed in first
+    // pass, entire message may be removed
+    // in second pass
+    struct message msg2;
+    message_init(&msg2);
+    list_add(ctx.messages, &msg2);
+    struct msg_statistics stat2;
+    struct subscriber sub2;
+    struct client client2;
+    client_init(&client2);
+    sub2.client = &client2;
+    msg_statistics_init(&stat2);
+    list_add(msg2.stats, &stat2);
+    stat2.nattempts = 3;
+    stat2.last_fail = timestamp();
+    stat2.subscriber = &sub2;
+    
+    // first pass: remove msg1
+    ret = gc_run_gc(&ctx);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+    CU_ASSERT_EQUAL_FATAL(&msg2, ctx.messages->root->entry);
+    CU_ASSERT_PTR_NULL_FATAL(ctx.messages->root->next);
+    // statstics are gone
+    CU_ASSERT_PTR_NOT_NULL_FATAL(msg2.stats->root);
+
+    // increase number of failed attempts to make it 
+    // eligible for garbage collection
+    stat2.nattempts = MAX_ATTEMPTS;
+
+    // second pass: remove msg2 with stat2
+    ret = gc_run_gc(&ctx);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+    CU_ASSERT_PTR_NULL_FATAL(ctx.messages->root);
+
+    // cleanup should have been done
+    CU_ASSERT_PTR_NULL_FATAL(msg2.stats);
+    CU_ASSERT_PTR_NULL_FATAL(msg1.stats);
+    CU_ASSERT_PTR_NULL_FATAL(stat2.statrwlock);
+
+    broker_context_destroy(&ctx);
+    client_destroy(&client2);
+}
+
 void gc_test_suite() {
     CU_pSuite gcSuite = CU_add_suite("gc", NULL, NULL);
     CU_add_test(gcSuite, "test_gc_eligible_stat",
@@ -311,4 +365,6 @@ void gc_test_suite() {
         test_gc_remove_eligible_msgs); 
     CU_add_test(gcSuite, "test_gc_remove_eligible_stats",
         test_gc_remove_eligible_stats); 
+    CU_add_test(gcSuite, "test_gc_run_gc",
+        test_gc_run_gc); 
 }
