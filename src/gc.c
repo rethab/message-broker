@@ -38,7 +38,7 @@ int gc_run_gc(struct broker_context *ctx) {
     assert(ret == 0);
 
     ret = list_len(&stats);
-    printf("GC: Removed %d Statistics\n", ret);
+    if (ret != 0) printf("GC: Removed %d Statistics\n", ret);
 
     // collect and remove messages
     ret = gc_collect_eligible_msgs(ctx->messages, &messages);
@@ -48,7 +48,7 @@ int gc_run_gc(struct broker_context *ctx) {
     assert(ret == 0);
 
     ret = list_len(&stats);
-    printf("GC: Removed %d Messages\n", ret);
+    if (ret != 0) printf("GC: Removed %d Messages\n", ret);
 
     list_clean(&stats);
     list_clean(&messages);

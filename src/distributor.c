@@ -19,12 +19,8 @@ void *distributor_main_loop(void *arg) {
     struct broker_context *ctx = arg;
 
     while (1) {
-        printf("Distributor: Delivering messages\n");
         deliver_messages(ctx->messages);
-
-        printf("Distributor: Falling asleep\n");
         sleep(DISTRIBUTOR_SEND_TIMEOUT);
-        printf("Distributor: Waking up\n");
     }
 }
 
@@ -98,6 +94,7 @@ static void deliver_message(struct message *msg,
 
 void deliver_messages(struct list *messages) {
 
+    int nmsgs = 0; // number of delivered messages
     int ret;
 
     // acquire read lock for list of messages
@@ -133,6 +130,7 @@ void deliver_messages(struct list *messages) {
 
                 if (is_eligible(stat)) {
                     deliver_message(msg, stat);    
+                    nmsgs++;
                 }
                 
                 // release read lock for statistic
@@ -154,4 +152,7 @@ void deliver_messages(struct list *messages) {
     // release read lock for list of messages
     ret = pthread_rwlock_unlock(messages->listrwlock);
     assert(ret == 0);
+
+    if (nmsgs != 0)
+        printf("Distributor: Delivered %d Messages\n", nmsgs);
 }
