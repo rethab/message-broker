@@ -30,17 +30,25 @@ int gc_run_gc(struct broker_context *ctx) {
     list_init(&stats);
     list_init(&messages);
 
+    // collect and remove statistic
     ret = gc_collect_eligible_stats(ctx->messages, &stats);
     assert(ret == 0);
 
     ret = gc_remove_eligible_stats(ctx->messages, &stats);
     assert(ret == 0);
 
+    ret = list_len(&stats);
+    printf("GC: Removed %d Statistics\n", ret);
+
+    // collect and remove messages
     ret = gc_collect_eligible_msgs(ctx->messages, &messages);
     assert(ret == 0);
 
     ret = gc_remove_eligible_msgs(ctx->messages, &messages);
     assert(ret == 0);
+
+    ret = list_len(&stats);
+    printf("GC: Removed %d Messages\n", ret);
 
     list_clean(&stats);
     list_clean(&messages);
