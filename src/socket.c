@@ -62,9 +62,11 @@ int socket_read_command(struct client *client,
         ret = read(client->sockfd, &c, 1); 
 
         // error
-        if (ret != 1) {
+        if (ret < 1) {
 
-            fprintf(stderr, "read: %s\n", strerror(errno));
+            if (ret < 0) {
+                fprintf(stderr, "read: %s\n", strerror(errno));
+            }
 
             // early release lock 
             ret = pthread_mutex_unlock(client->mutex_r);
@@ -73,7 +75,7 @@ int socket_read_command(struct client *client,
             set_client_dead(client);
 
             return SOCKET_CLIENT_GONE;
-        }
+        } 
 
         buf[pos++] = c;
 

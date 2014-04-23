@@ -90,7 +90,8 @@ int process_send(struct broker_context *ctx,
 
         return -1;
     } else {
-        printf("Added message '%s' to topic '%s'\n", content, topic);
+        printf("Broker: Added message '%s' to topic '%s'\n",
+            content, topic);
         return 0;
     }
 }
@@ -141,7 +142,7 @@ int process_disconnect(struct broker_context *ctx,
     ret = pthread_mutex_unlock(client->mutex_w);
     assert(ret == 0);
 
-    printf("Set subscriber '%s' to dead\n", sub->name);
+    printf("Broker: Set subscriber '%s' to dead\n", sub->name);
     return 0;
 }
 
@@ -155,10 +156,10 @@ int main_loop(struct broker_context *ctx,
 
     ret = socket_read_command(client, &cmd);
     if (ret == SOCKET_CLIENT_GONE || ret == SOCKET_NECROMANCE) {
-        printf("Cient has gone\n");
+        printf("Broker: Client '%s' has gone\n", sub->name);
         return WORKER_ERROR;
     } else if (ret == SOCKET_TOO_MUCH) {
-        printf("Client has sent too much. Closing Connection\n");
+        printf("Broker: Client has sent too much. Closing Connection\n");
         return WORKER_ERROR;
     } else {
         assert(ret == 0);
@@ -173,6 +174,7 @@ int main_loop(struct broker_context *ctx,
             sub->client = client;
             sub->name = cmd.headers[0].val; // has only one header
             ret = send_connected(client);
+            printf("Broker: New Client '%s'\n", sub->name);
             return WORKER_CONTINUE;
         }
     } else {

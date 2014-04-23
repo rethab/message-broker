@@ -85,8 +85,6 @@ static void deliver_message(struct message *msg,
         stat->last_fail = now();
         stat->nattempts++;
     } else {
-        printf("Sent message to subscriber\n");
-
         stat->last_fail = 0;
         stat->nattempts++;
     }

@@ -91,8 +91,6 @@ static void * start_handler(void *arg) {
             continue;
         }
 
-        printf("New client %s\n", inet_ntoa(clientaddr.sin_addr));
-
         struct handler_params client_handler_params;
         client_handler_params.ctx = params->ctx;
         client_handler_params.sock = cli;
@@ -106,7 +104,6 @@ static void * start_handler(void *arg) {
 }
 
 int handle_clients(int port, struct broker_context *ctx) {
-    printf("Starting client handler.. \n");
 
     int sockfd, ret;
     struct sockaddr_in srvaddr;
