@@ -27,7 +27,7 @@ int send_connect(int sockfd, char *name);
 int expect_connected(int sockfd);
 int send_subscribe(int sockfd, char *dest);
 int send_send(int sockfd, char *topic, char *content);
-int send_disconnect(int sockfd);
+int send_disconnect(int sockfd, char *name);
 int read_from_server(int sockfd, char *buf, size_t buflen);
 
 void *subscriber(void *arg) {
@@ -49,10 +49,11 @@ void *subscriber(void *arg) {
     if (ret != 0)
         fprintf(stderr, "subscriber: Failed to subscribe to news\n");
 
-    do {
+    while (1) {
         ret = read_from_server(sockfd, buf, 1024);
-        printf("subscriber: received: [%s]\n", buf);
-    } while (ret);
+        if (ret != 1) break;
+        else printf("subscriber: received: [%s]\n", buf);
+    }
 
     return 0;
 }
@@ -68,9 +69,18 @@ void *sender(void *arg) {
     ret = expect_connected(sockfd);
     if (ret != 0)
         fprintf(stderr, "sender: Missing connected\n");
-    ret = send_send(sockfd, "stocks", "price: 22.3");
+
+    for (int i = 0; i < 100; i++) {
+        char msg[64];
+        char *topic = i % 2 == 0 ? "news" : "stocks";
+        sprintf(msg, "price: 22.%d", i);
+        ret = send_send(sockfd, topic, msg);
+        if (ret != 0)
+            fprintf(stderr, "sender: Failed to send to stocks\n");
+    }
+    ret = send_disconnect(sockfd, "sender");
     if (ret != 0)
-        fprintf(stderr, "sender: Failed to send to stocks\n");
+        fprintf(stderr, "sender: Failed to send disconnect\n");
 
     return 0;
 }
@@ -109,7 +119,7 @@ int main(int argc, char *argv[]) {
 }
 
 int send_connect(int sockfd, char *name) {
-    printf("Send connect\n");
+    printf("Send connect '%s'\n", name);
     char buf[64];
     sprintf(buf, "CONNECT\nlogin:%s\n\n", name);
     int n = write(sockfd, buf, strlen(buf) + 1);
@@ -121,7 +131,7 @@ int send_connect(int sockfd, char *name) {
 }
 
 int send_subscribe(int sockfd, char *dest) {
-    printf("Send subscribe\n");
+    printf("Send subscribe to '%s'\n", dest);
     char buf[64];
     sprintf(buf, "SUBSCRIBE\ndestination:%s\n\n", dest);
     int n = write(sockfd, buf, strlen(buf) + 1);
@@ -133,7 +143,8 @@ int send_subscribe(int sockfd, char *dest) {
 }
 
 int send_send(int sockfd, char *topic, char *content) {
-    printf("Send send\n"); char buf[128];
+    printf("Send send to topic '%s'\n", topic);
+    char buf[128];
     sprintf(buf, "SEND\ntopic:%s\n\n%s\n\n", topic, content);
     int n = write(sockfd, buf, strlen(buf) + 1);
     if (n != strlen(buf) + 1) {
@@ -143,8 +154,8 @@ int send_send(int sockfd, char *topic, char *content) {
     return 0;
 }
 
-int send_disconnect(int sockfd) {
-    printf("Send disconnect\n");
+int send_disconnect(int sockfd, char *name) {
+    printf("Send disconnect '%s'\n", name);
     char buf[] = "DISCONNECT\n\n";
     int n = write(sockfd, buf, strlen(buf) + 1);
     if (n != strlen(buf) + 1) {
