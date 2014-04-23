@@ -142,7 +142,7 @@ int process_disconnect(struct broker_context *ctx,
     ret = pthread_mutex_unlock(client->mutex_w);
     assert(ret == 0);
 
-    printf("Broker: Set subscriber '%s' to dead\n", sub->name);
+    printf("Broker: Subscriber '%s' disconnected\n", sub->name);
     return 0;
 }
 
