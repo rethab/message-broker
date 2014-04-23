@@ -156,7 +156,10 @@ int main_loop(struct broker_context *ctx,
 
     ret = socket_read_command(client, &cmd);
     if (ret == SOCKET_CLIENT_GONE || ret == SOCKET_NECROMANCE) {
-        printf("Broker: Client '%s' has gone\n", sub->name);
+        if (*connected)
+            printf("Broker: Client '%s' has gone\n", sub->name);
+        else
+            printf("Broker: Client has gone\n");
         return WORKER_ERROR;
     } else if (ret == SOCKET_TOO_MUCH) {
         printf("Broker: Client has sent too much. Closing Connection\n");
