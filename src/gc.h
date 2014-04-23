@@ -29,12 +29,14 @@ int gc_collect_eligible_msgs(struct list *messages,
                              struct list *eligible);
 
 /* removes all statstics passed in the second
- * parameter from the messages list */
+ * parameter from the messages list. returns
+ * the number of statistics removed */
 int gc_remove_eligible_stats(struct list *messages,
                              struct list *eligible);
 
 /* removes all messages passed in the second
- * parameter from the messages list */
+ * parameter from the messages list. returns
+ * the number of messages removed */
 int gc_remove_eligible_msgs(struct list *messages,
                             struct list *eligible);
 

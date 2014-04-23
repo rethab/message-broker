@@ -35,9 +35,8 @@ int gc_run_gc(struct broker_context *ctx) {
     assert(ret == 0);
 
     ret = gc_remove_eligible_stats(ctx->messages, &stats);
-    assert(ret == 0);
+    assert(ret >= 0);
 
-    ret = list_len(&stats);
     if (ret != 0) printf("GC: Removed %d Statistics\n", ret);
 
     // collect and remove messages
@@ -45,7 +44,7 @@ int gc_run_gc(struct broker_context *ctx) {
     assert(ret == 0);
 
     ret = gc_remove_eligible_msgs(ctx->messages, &messages);
-    assert(ret == 0);
+    assert(ret >= 0);
 
     ret = list_len(&stats);
     if (ret != 0) printf("GC: Removed %d Messages\n", ret);
@@ -192,6 +191,8 @@ int gc_remove_eligible_stats(struct list *messages,
                              struct list *eligible) {
     int ret;
 
+    int nstats;
+
     // acquire read lock on message list
     ret = pthread_rwlock_rdlock(messages->listrwlock);
     assert(ret == 0);
@@ -210,6 +211,7 @@ int gc_remove_eligible_stats(struct list *messages,
             ret = list_remove(msg->stats, curStat->entry);
             if (ret == 0) {
                 msg_statistics_destroy(curStat->entry);
+                nstats++;
             } else {
                 assert(ret == LIST_NOT_FOUND);
             }
@@ -229,12 +231,14 @@ int gc_remove_eligible_stats(struct list *messages,
     ret = pthread_rwlock_unlock(messages->listrwlock);
     assert(ret == 0);
 
-    return 0;
+    return nstats;
 }
 
 int gc_remove_eligible_msgs(struct list *messages,
                             struct list *eligible) {
     int ret;
+
+    int nmsgs;
 
     // acquire write lock on message list
     ret = pthread_rwlock_wrlock(messages->listrwlock);
@@ -246,6 +250,7 @@ int gc_remove_eligible_msgs(struct list *messages,
         ret = list_remove(messages, cur->entry);
         if (ret == 0) {
             message_destroy(cur->entry);
+            nmsgs++;
         } else {
             assert(ret == LIST_NOT_FOUND);
         }
@@ -257,5 +262,5 @@ int gc_remove_eligible_msgs(struct list *messages,
     ret = pthread_rwlock_unlock(messages->listrwlock);
     assert(ret == 0);
 
-    return 0;
+    return nmsgs;
 }
