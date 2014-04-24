@@ -191,7 +191,7 @@ int gc_remove_eligible_stats(struct list *messages,
                              struct list *eligible) {
     int ret;
 
-    int nstats;
+    int nstats = 0;
 
     // acquire read lock on message list
     ret = pthread_rwlock_rdlock(messages->listrwlock);
@@ -238,7 +238,7 @@ int gc_remove_eligible_msgs(struct list *messages,
                             struct list *eligible) {
     int ret;
 
-    int nmsgs;
+    int nmsgs = 0;
 
     // acquire write lock on message list
     ret = pthread_rwlock_wrlock(messages->listrwlock);
