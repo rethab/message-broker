@@ -15,6 +15,7 @@ void error(char *msg) {
 }
 
 struct thread_params {
+    /* server to connect to */
     struct hostent *server;
     int port;
 };
@@ -70,7 +71,7 @@ void *sender(void *arg) {
     if (ret != 0)
         fprintf(stderr, "sender: Missing connected\n");
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 900; i++) {
         char msg[64];
         char *topic = i % 2 == 0 ? "news" : "stocks";
         sprintf(msg, "price: 22.%d", i);
@@ -81,6 +82,33 @@ void *sender(void *arg) {
     ret = send_disconnect(sockfd, "sender");
     if (ret != 0)
         fprintf(stderr, "sender: Failed to send disconnect\n");
+
+    return 0;
+}
+
+void *sender2(void *arg) {
+    int ret;
+    struct thread_params *params = arg;
+    int sockfd = connect_to_server(params->server, params->port);
+
+    ret = send_connect(sockfd, "sender2");
+    if (ret != 0)
+        fprintf(stderr, "sender2: Failed to connect\n");
+    ret = expect_connected(sockfd);
+    if (ret != 0)
+        fprintf(stderr, "sender2: Missing connected\n");
+
+    for (int i = 0; i < 700; i++) {
+        char msg[64];
+        char *topic = i % 2 == 0 ? "news" : "stocks";
+        sprintf(msg, "pre: 33.%d", i);
+        ret = send_send(sockfd, topic, msg);
+        if (ret != 0)
+            fprintf(stderr, "sender2: Failed to send to stocks\n");
+    }
+    ret = send_disconnect(sockfd, "sender2");
+    if (ret != 0)
+        fprintf(stderr, "sender2: Failed to send disconnect\n");
 
     return 0;
 }
@@ -103,7 +131,7 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    pthread_t t1, t2;
+    pthread_t t1, t2, t3;
     ret = pthread_create(&t1, NULL, &subscriber, params);
     if (ret != 0) fprintf(stderr,"ERROR: %s\n", strerror(errno));
 
@@ -112,8 +140,12 @@ int main(int argc, char *argv[]) {
     pthread_create(&t2, NULL, &sender, params);
     if (ret != 0) fprintf(stderr,"ERROR: %s\n", strerror(errno));
 
+    pthread_create(&t3, NULL, &sender2, params);
+    if (ret != 0) fprintf(stderr,"ERROR: %s\n", strerror(errno));
+
     pthread_join(t1, NULL);
     pthread_join(t2, NULL);
+    pthread_join(t3, NULL);
 
     return 0;
 }
