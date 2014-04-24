@@ -164,8 +164,9 @@ int main_loop(struct broker_context *ctx,
     } else if (ret == SOCKET_TOO_MUCH) {
         printf("Broker: Client has sent too much. Closing Connection\n");
         return WORKER_ERROR;
-    } else {
-        assert(ret == 0);
+    } else if (ret != 0){
+        ret = send_error(client, "Expected CONNECT");
+        return WORKER_CONTINUE;
     }
 
     if (!(*connected)) {
