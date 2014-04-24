@@ -16,8 +16,6 @@
 #include "gc.h"
 #include "distributor.h"
 
-#include "../test/util.c"
-
 #define MAXPENDING 10
 #define BUFSIZE    1024
 
@@ -48,8 +46,6 @@ static pthread_t distributor_thread;
 
 
 int main(int argc, char** argv) {
-
-    install_segfault_handler();
 
     if (argc != 2) {
         fprintf(stderr, "Usage: %s port\n", argv[0]);
