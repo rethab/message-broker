@@ -18,6 +18,7 @@
 
 #define MAXPENDING 10
 #define BUFSIZE    1024
+#define DEFAULT_PORT 55664
 
 #define EXIT    1
 #define NO_EXIT 0
@@ -47,12 +48,13 @@ static pthread_t distributor_thread;
 
 int main(int argc, char** argv) {
 
+    int port;
     if (argc != 2) {
-        fprintf(stderr, "Usage: %s port\n", argv[0]);
-        exit(EXIT_FAILURE);
+        port = DEFAULT_PORT;
+        printf("Usng default port %d\n", port);
+    } else {
+        port = atoi(argv[1]);
     }
-
-    int port = atoi(argv[1]);
 
     struct broker_context ctx;
     broker_context_init(&ctx);

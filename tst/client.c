@@ -9,6 +9,8 @@
 #include <errno.h>
 #include <pthread.h>
 
+#define DEFAULT_PORT 55664
+
 void error(char *msg) {
     perror(msg);
     exit(0);
@@ -97,7 +99,22 @@ void *sender(void *arg) {
 
 int main(int argc, char *argv[]) {
     int ret;
-    if (argc < 5) {
+
+    char *host;
+    struct thread_params *params = malloc(sizeof(struct thread_params));
+
+    if (argc == 1) {
+        host = strdup("localhost");
+        params->port = DEFAULT_PORT;
+        params->name = strdup("ritschy");
+        params->nmsgs = 42;
+        printf("Using default values. Host %s:%d\n", host, params->port);
+    } else if (argc == 5) {
+        host = argv[1];
+        params->port = atoi(argv[2]); 
+        params->name = strdup(argv[3]);
+        params->nmsgs = atoi(argv[4]);
+    } else {
         fprintf(stderr,"usage %s hostname port name nmsgs\n", argv[0]);
         fprintf(stderr,"\thostname: name of server\n");
         fprintf(stderr,"\tport: port of server\n");
@@ -106,14 +123,9 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    struct thread_params *params = malloc(sizeof(struct thread_params));
 
-    params->port = atoi(argv[2]); 
-    params->server = malloc(sizeof(struct hostent));
-    params->name = strdup(argv[3]);
-    params->nmsgs = atoi(argv[4]);
+    params->server = gethostbyname(host);
 
-    params->server = gethostbyname(argv[1]);
     if (params->server == NULL) {
         fprintf(stderr,"ERROR, no such host\n");
         exit(0);
