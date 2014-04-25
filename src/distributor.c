@@ -16,11 +16,19 @@ static long now() {
 }
 
 void *distributor_main_loop(void *arg) {
+    int ret;
+
     struct broker_context *ctx = arg;
 
     while (1) {
-        deliver_messages(ctx->messages);
-        sleep(DISTRIBUTOR_SEND_TIMEOUT);
+        ret = deliver_messages(ctx->messages);
+        assert(ret >= 0);
+
+        if (ret == 0) {
+            sleep(DISTRIBUTOR_SEND_TIMEOUT);
+        } else {
+            printf("Distributor: Delivered %d Messages\n", ret);
+        }
     }
 }
 
@@ -90,7 +98,7 @@ static void deliver_message(struct message *msg,
     }
 }
 
-void deliver_messages(struct list *messages) {
+int deliver_messages(struct list *messages) {
 
     int nmsgs = 0; // number of delivered messages
     int ret;
@@ -156,6 +164,5 @@ void deliver_messages(struct list *messages) {
     ret = pthread_rwlock_unlock(messages->listrwlock);
     assert(ret == 0);
 
-    if (nmsgs != 0)
-        printf("Distributor: Delivered %d Messages\n", nmsgs);
+    return nmsgs;
 }

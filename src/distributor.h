@@ -27,8 +27,9 @@
 /* searches the list of messages for messages 
  * to be sent to a subscriber. this may be for the first
  * time or because it is eligible to be resent.
+ * returns the number of messages delivered.
  */
-void deliver_messages(struct list *messages);
+int deliver_messages(struct list *messages);
 
 /* tests whether the message is is eligible
  * for redelivery to this client */
