@@ -96,6 +96,7 @@ static long now() {
 
 void test_deliver_messages() {
     before_test();
+    int ret;
     // never tried before
     stat1.nattempts = 0;
     stat1.last_fail = 0;
@@ -108,7 +109,8 @@ void test_deliver_messages() {
     stat3.nattempts = 3;
     stat3.last_fail = now() - DAY;
 
-    deliver_messages(&messages);
+    ret = deliver_messages(&messages);
+    CU_ASSERT_EQUAL_FATAL(3, ret);
     CU_ASSERT_EQUAL_FATAL(1, stat1.nattempts);
     CU_ASSERT_EQUAL_FATAL(2, stat2.nattempts);
     CU_ASSERT_EQUAL_FATAL(4, stat3.nattempts);
@@ -133,6 +135,7 @@ void test_deliver_messages() {
 
 void test_deliver_messages_not_eligible() {
     before_test();
+    int ret;
     // too many attempts: dont deliver
     stat1.nattempts = 999;
     long stat1_fail = now() - HOUR;
@@ -147,7 +150,8 @@ void test_deliver_messages_not_eligible() {
     stat3.nattempts = 3;
     stat3.last_fail = now() - DAY;
 
-    deliver_messages(&messages);
+    ret = deliver_messages(&messages);
+    CU_ASSERT_EQUAL_FATAL(1, ret);
     CU_ASSERT_EQUAL_FATAL(999, stat1.nattempts);
     CU_ASSERT_EQUAL_FATAL(1, stat2.nattempts);
     CU_ASSERT_EQUAL_FATAL(4, stat3.nattempts);
