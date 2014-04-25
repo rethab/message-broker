@@ -273,10 +273,6 @@ static int subscriber_dead(struct subscriber *sub) {
 
     struct client *client = sub->client;
 
-    // acquire read lock on filedescriptor
-    ret = pthread_mutex_lock(client->mutex_r);
-    assert(ret == 0);
-    
     // acquire read lock on dead flag
     ret = pthread_mutex_lock(client->deadmutex);
     assert(ret == 0);
@@ -285,10 +281,6 @@ static int subscriber_dead(struct subscriber *sub) {
     
     // release read lock on dead flag
     ret = pthread_mutex_unlock(client->deadmutex);
-    assert(ret == 0);
-
-    // release read lock on filedescriptor
-    ret = pthread_mutex_unlock(client->mutex_r);
     assert(ret == 0);
 
     return dead;

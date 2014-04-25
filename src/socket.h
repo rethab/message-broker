@@ -53,10 +53,7 @@ struct client {
     pthread_mutex_t *deadmutex;
 
     /* indicates whether the connection
-     * to the client is dead. this lock
-     * must only be acquired when either
-     * the read or write lock for the socket
-     * itself is held. 0 means it is not
+     * to the client is dead. 0 means it is not
      * dead and 1 means it is dead. death
      * might have come unexpected (failed to write)
      * or expected (orderly disconnect). */
