@@ -51,7 +51,7 @@ static int parse_header(char *raw, struct stomp_command *cmd) {
     // at most expected, unless end or empty
     while (i < cmd->nheaders && rawline != NULL
             && strnlen(rawline, 1) != 0) {
-        char *line = strdup(rawline); // MALLOC
+        char *line = strdup(rawline);
 
         // key
         char *key = strtok_r(line, ":", &saveline);
@@ -159,9 +159,9 @@ static int parse_command_generic(const char *cmdname,
     else if (expect_content == 0 && rawcontent != NULL)
         return STOMP_UNEXPECTED_CONTENT;
     
-    cmd->name = strdup(cmdname); // malloc
+    cmd->name = strdup(cmdname);
     if (expect_content == 1) 
-        cmd->content = strdup(rawcontent); // malloc
+        cmd->content = strdup(rawcontent);
     else
         cmd->content = NULL;
     return 0;
@@ -231,7 +231,7 @@ static int create_command_generic(struct stomp_command cmd,
     len += 1; // \0
 
     // memory for string
-    *str = malloc(sizeof(char) * len); // MALLOC
+    *str = malloc(sizeof(char) * len);
 
     // strcat appends to the first parameter
     // by removing the first zero byte

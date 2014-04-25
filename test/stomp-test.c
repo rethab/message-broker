@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <pthread.h>
 
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
@@ -177,6 +178,88 @@ void test_parse_command_disconnect() {
         parse_command(str3, &cmd));
 }
 
+void *_run_stuff(void * _) {
+
+    int *ret = malloc(sizeof(int));
+    int nruns = 10000;
+
+    struct stomp_command cmd;
+
+    *ret = 0;
+    while (nruns--) {
+
+        char *raw1 = strdup("CONNECT\nlogin:foo\n\n");
+        char *raw2 = strdup("SEND\ntopic:foo\n\nhello, world\n\n");
+        char *raw3 = strdup("SEND\ntopic:bar\n\nhello, europe\n\n");
+
+        *ret = parse_command(raw1, &cmd);
+        if (*ret != 0) break;
+        if (strcmp("CONNECT", cmd.name) != 0 ||
+            strcmp("login", cmd.headers[0].key) != 0 ||
+            strcmp("foo", cmd.headers[0].val) != 0) {
+            *ret = -42;
+            break;
+        }
+
+        *ret = parse_command(raw2, &cmd);
+        if (*ret != 0) break;
+        if (strcmp("SEND", cmd.name) != 0 ||
+            strcmp("topic", cmd.headers[0].key) != 0 ||
+            strcmp("foo", cmd.headers[0].val) != 0 ||
+            strcmp("hello, world", cmd.content) != 0) {
+            *ret = -43;
+            break;
+        }
+
+        *ret = parse_command(raw3, &cmd);
+        if (*ret != 0) break;
+        if (strcmp("SEND", cmd.name) != 0 ||
+            strcmp("topic", cmd.headers[0].key) != 0 ||
+            strcmp("bar", cmd.headers[0].val) != 0 ||
+            strcmp("hello, europe", cmd.content) != 0) {
+            *ret = -44;
+            break;
+        }
+
+        struct stomp_command cmd;   
+        cmd.name = "MESSAGE";
+        cmd.headers = NULL;
+        cmd.content = "hello world";
+        cmd.nheaders = 0;
+        char* str;
+        *ret = 0, create_command(cmd, &str);
+        if (*ret != 0) break;
+
+        if (strcmp("MESSAGE\nhello world\n\n", str) != 0) {
+            *ret = -43;
+            break;
+        }
+    }
+
+    printf("Returning: %d\n", *ret);
+
+    pthread_exit(ret);
+}
+
+void test_parse_command_threadsafety() {
+    int ret;
+    pthread_t t1,t2,t3;   
+    ret = pthread_create(&t1, NULL, &_run_stuff, NULL);
+    assert(ret == 0);
+    ret = pthread_create(&t2, NULL, &_run_stuff, NULL);
+    assert(ret == 0);
+    ret = pthread_create(&t3, NULL, &_run_stuff, NULL);
+    assert(ret == 0);
+
+    void *res;
+    pthread_join(t1, &res);
+    CU_ASSERT_EQUAL_FATAL(0, *((int *) (res)));
+    pthread_join(t2, &res);
+    CU_ASSERT_EQUAL_FATAL(0, *((int *) (res)));
+    pthread_join(t3, &res);
+    CU_ASSERT_EQUAL_FATAL(0, *((int *) (res)));
+}
+
 
 /* TEST CREATIONS FOR CLIENT RESPONSE */
 
@@ -313,6 +396,8 @@ void add_stomp_parse_suite() {
         test_parse_command_subscribe);
     CU_add_test(parseSuite, "test_parse_command_disconnect",
         test_parse_command_disconnect);
+    CU_add_test(parseSuite, "test_parse_command_threadsafety",
+        test_parse_command_threadsafety);
 }
 
 void add_stomp_create_suite() {
