@@ -16,10 +16,9 @@
 *.exe
 *.out
 *.app
-src/broker
-src/client
+src/server
+test/client
 *.gcda
 *.gcno
 coverage
 coverage.info
-src/server
