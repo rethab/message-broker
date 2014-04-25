@@ -1,6 +1,10 @@
 CFLAGS=-Isrc -std=c99 -D_XOPEN_SOURCE=700 -Wall -lpthread 
-TEST_CFLAGS=-Itest -lcunit -g -rdynamic -ftest-coverage -fprofile-arcs -lgcov
-PROD_CFLAGS=-DNDEBUG -Wno-unused-but-set-variable -Wno-unused-variable -rdynamic
+TEST_CFLAGS=-Itst -lcunit -g -rdynamic -ftest-coverage -fprofile-arcs -lgcov
+PROD_CFLAGS=-DNDEBUG -Wno-unused-but-set-variable -Wno-unused-variable
+
+all: server client
+	cp -vf src/server run
+	cp -vf tst/client test
 
 server: CFLAGS += $(PROD_CFLAGS)
 server: topic stomp broker socket distributor gc
@@ -8,14 +12,14 @@ server: topic stomp broker socket distributor gc
 
 client: CFLAGS += $(PROD_CFLAGS)
 client: stomp
-	gcc $(CFLAGS) -o test/client test/client.c src/stomp.o 
+	gcc $(CFLAGS) -o tst/client tst/client.c src/stomp.o 
 
 test: CFLAGS += $(TEST_CFLAGS)
 test: clean topic stomp socket broker distributor gc
-	gcc $(CFLAGS) -o test/main.o test/main.c src/topic.o src/stomp.o src/socket.o src/broker.o src/distributor.o src/gc.o
+	gcc $(CFLAGS) -o tst/main.o tst/main.c src/topic.o src/stomp.o src/socket.o src/broker.o src/distributor.o src/gc.o
 
 cover: test
-	test/main.o
+	tst/main.o
 	lcov -c -d src -o coverage.info
 	lcov --remove coverage.info "/usr*" -o coverage.info
 	genhtml coverage.info -o coverage
@@ -39,10 +43,12 @@ gc: src/gc.c
 	gcc -c $(CFLAGS) -o src/gc.o src/gc.c
 
 clean:
-	rm -fv {src,test}/*.o
+	rm -fv {src,tst}/*.o
 	rm -fv src/server
-	rm -fv test/client
+	rm -fv tst/client
 	rm -rfv coverage/
 	rm -fv coverage.info
 	rm -fv {src/,}*.gcda
 	rm -fv {src/,}*.gcno
+	rm -fv run
+	rm -fv test
