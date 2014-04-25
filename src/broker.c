@@ -90,7 +90,7 @@ int process_send(struct broker_context *ctx,
 
         return -1;
     } else {
-        printf("Broker: Added message '%s' to topic '%s'\n",
+        fprintf(stderr, "Broker: Added message '%s' to topic '%s'\n",
             content, topic);
         return 0;
     }
@@ -142,7 +142,7 @@ int process_disconnect(struct broker_context *ctx,
     ret = pthread_mutex_unlock(client->mutex_w);
     assert(ret == 0);
 
-    printf("Broker: Client '%s' disconnected\n", sub->name);
+    fprintf(stderr, "Broker: Client '%s' disconnected\n", sub->name);
     return 0;
 }
 
@@ -162,12 +162,12 @@ int main_loop(struct broker_context *ctx,
     ret = socket_read_command(client, &cmd);
     if (ret == SOCKET_CLIENT_GONE || ret == SOCKET_NECROMANCE) {
         if (*connected)
-            printf("Broker: Client '%s' has gone\n", sub->name);
+            fprintf(stderr, "Broker: Client '%s' has gone\n", sub->name);
         else
-            printf("Broker: Client has gone\n");
+            fprintf(stderr, "Broker: Client has gone\n");
         val = WORKER_ERROR;
     } else if (ret == SOCKET_TOO_MUCH) {
-        printf("Broker: Client has sent too much. Closing Connection\n");
+        fprintf(stderr, "Broker: Client has sent too much. Closing Connection\n");
         val = WORKER_ERROR;
     } else if (ret != 0){
         ret = send_error(client, "Expected CONNECT");
@@ -181,7 +181,7 @@ int main_loop(struct broker_context *ctx,
             sub->client = client;
             sub->name = strdup(cmd.headers[0].val); // only one header
             ret = send_connected(client);
-            printf("Broker: New Client '%s'\n", sub->name);
+            fprintf(stderr, "Broker: New Client '%s'\n", sub->name);
             val = WORKER_CONTINUE;
         }
     } else {

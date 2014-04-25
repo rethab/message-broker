@@ -61,7 +61,7 @@ void *subscriber(void *arg) {
     while (1) {
         ret = read_from_server(sockfd, buf, 1024);
         if (ret != 1) break;
-        else printf("subscriber: received: [%s]\n", buf);
+        else fprintf(stderr, "subscriber: received: [%s]\n", buf);
     }
 
     return 0;
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
         params->port = DEFAULT_PORT;
         params->name = strdup("ritschy");
         params->nmsgs = 42;
-        printf("Using default values. Host %s:%d\n", host, params->port);
+        fprintf(stderr, "Using default values. Host %s:%d\n", host, params->port);
     } else if (argc == 5) {
         host = argv[1];
         params->port = atoi(argv[2]); 
@@ -140,18 +140,14 @@ int main(int argc, char *argv[]) {
     pthread_create(&t2, NULL, &sender, params);
     if (ret != 0) fprintf(stderr,"ERROR: %s\n", strerror(errno));
 
-    //pthread_create(&t3, NULL, &sender2, params);
-    //if (ret != 0) fprintf(stderr,"ERROR: %s\n", strerror(errno));
-
     pthread_join(t1, NULL);
     pthread_join(t2, NULL);
-    //pthread_join(t3, NULL);
 
     return 0;
 }
 
 int send_connect(int sockfd, char *name) {
-    printf("Send connect '%s'\n", name);
+    fprintf(stderr, "Send connect '%s'\n", name);
     char buf[64];
     sprintf(buf, "CONNECT\nlogin:%s\n\n", name);
     int n = write(sockfd, buf, strlen(buf) + 1);
@@ -163,7 +159,7 @@ int send_connect(int sockfd, char *name) {
 }
 
 int send_subscribe(int sockfd, char *dest) {
-    printf("Send subscribe to '%s'\n", dest);
+    fprintf(stderr, "Send subscribe to '%s'\n", dest);
     char buf[64];
     sprintf(buf, "SUBSCRIBE\ndestination:%s\n\n", dest);
     int n = write(sockfd, buf, strlen(buf) + 1);
@@ -175,7 +171,7 @@ int send_subscribe(int sockfd, char *dest) {
 }
 
 int send_send(int sockfd, char *topic, char *content) {
-    printf("Send send to topic '%s'\n", topic);
+    fprintf(stderr, "Send send to topic '%s'\n", topic);
     char buf[128];
     sprintf(buf, "SEND\ntopic:%s\n\n%s\n\n", topic, content);
     int n = write(sockfd, buf, strlen(buf) + 1);
@@ -187,7 +183,7 @@ int send_send(int sockfd, char *topic, char *content) {
 }
 
 int send_disconnect(int sockfd, char *name) {
-    printf("Send disconnect '%s'\n", name);
+    fprintf(stderr, "Send disconnect '%s'\n", name);
     char buf[] = "DISCONNECT\n\n";
     int n = write(sockfd, buf, strlen(buf) + 1);
     if (n != strlen(buf) + 1) {
@@ -212,7 +208,7 @@ int read_from_server(int sockfd, char *buf, size_t buflen) {
     while (pos < buflen) {
         nbytes = read(sockfd, &c, 1); 
         if (nbytes == 0) {
-            printf("EOF\n");
+            fprintf(stderr, "EOF\n");
             return -1;
         }
         buf[pos++] = c;

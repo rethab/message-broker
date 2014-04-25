@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     int port;
     if (argc != 2) {
         port = DEFAULT_PORT;
-        printf("Usng default port %d\n", port);
+        fprintf(stderr, "Usng default port %d\n", port);
     } else {
         port = atoi(argv[1]);
     }
@@ -62,9 +62,9 @@ int main(int argc, char** argv) {
     if (handle_clients(port, &ctx) == 0 &&
         start_gc(&ctx) == 0 &&
         start_distributor(&ctx) == 0) {
-        printf("All components started successfully\n");
+        fprintf(stderr, "All components started successfully\n");
     } else {
-        printf("Aborting..\n");
+        fprintf(stderr, "Aborting..\n");
         broker_context_destroy(&ctx);
         exit(EXIT_FAILURE);
     }
@@ -136,8 +136,8 @@ int handle_clients(int port, struct broker_context *ctx) {
         fprintf(stderr, "Failed to start client handler\n");
         return -1;
     } else {
-        printf("Waiting for clients to connect on port %d\n", port);
-        printf("Successfully started client handler\n");
+        fprintf(stderr, "Waiting for clients to connect on port %d\n", port);
+        fprintf(stderr, "Successfully started client handler\n");
         return 0;
     }
 }
@@ -145,7 +145,7 @@ int handle_clients(int port, struct broker_context *ctx) {
 int start_gc(struct broker_context *ctx) {
     int ret;
 
-    printf("Starting gc.. ");
+    fprintf(stderr, "Starting gc.. ");
 
     ret = pthread_create(&gc_thread, NULL, &gc_main_loop, ctx);
     if (ret != 0) {
@@ -153,7 +153,7 @@ int start_gc(struct broker_context *ctx) {
         fprintf(stderr, "Failed to start gc\n");
         return -1;
     } else {
-        printf("success\n");
+        fprintf(stderr, "success\n");
         return 0;
     }
 }
@@ -161,7 +161,7 @@ int start_gc(struct broker_context *ctx) {
 int start_distributor(struct broker_context *ctx) {
     int ret;
 
-    printf("Starting distributor.. ");
+    fprintf(stderr, "Starting distributor.. ");
 
     ret = pthread_create(&distributor_thread, NULL,
         &distributor_main_loop, ctx);
@@ -170,7 +170,7 @@ int start_distributor(struct broker_context *ctx) {
         fprintf(stderr, "Failed to start distributor\n");
         return -1;
     } else {
-        printf("success\n");
+        fprintf(stderr, "success\n");
         return 0;
     }
 }

@@ -27,7 +27,7 @@ void *distributor_main_loop(void *arg) {
         if (ret == 0) {
             sleep(DISTRIBUTOR_SEND_TIMEOUT);
         } else {
-            printf("Distributor: Delivered %d Messages\n", ret);
+            fprintf(stderr, "Distributor: Delivered %d Messages\n", ret);
         }
     }
 }

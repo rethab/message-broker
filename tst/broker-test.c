@@ -277,7 +277,7 @@ void test_handle_client() {
     size_t resp2len = strlen("RECEIPT\n\n") + 1; // after DISCONNECT
     char resp2[32];
     int ret = read(fds[1], resp1, resp1len);
-    if (ret != 0) printf("Error: %s\n", strerror(errno));
+    if (ret != 0) fprintf(stderr, "Error: %s\n", strerror(errno));
     assert(0 < ret);
     assert(0 < read(fds[1], resp2, resp2len));
     CU_ASSERT_STRING_EQUAL_FATAL("CONNECTED\n\n", resp1);
