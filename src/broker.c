@@ -151,8 +151,11 @@ int main_loop(struct broker_context *ctx,
               int *connected,
               struct subscriber *sub) {
 
-    int ret;
+    int ret; // return value from other functions
+    int val = -1; // return value from this function
     struct stomp_command cmd;
+    cmd.headers = NULL;
+    cmd.content = NULL;
 
     ret = socket_read_command(client, &cmd);
     if (ret == SOCKET_CLIENT_GONE || ret == SOCKET_NECROMANCE) {
@@ -160,43 +163,45 @@ int main_loop(struct broker_context *ctx,
             printf("Broker: Client '%s' has gone\n", sub->name);
         else
             printf("Broker: Client has gone\n");
-        return WORKER_ERROR;
+        val = WORKER_ERROR;
     } else if (ret == SOCKET_TOO_MUCH) {
         printf("Broker: Client has sent too much. Closing Connection\n");
-        return WORKER_ERROR;
+        val = WORKER_ERROR;
     } else if (ret != 0){
         ret = send_error(client, "Expected CONNECT");
-        return WORKER_CONTINUE;
-    }
-
-    if (!(*connected)) {
+        val = WORKER_CONTINUE;
+    } else if (!(*connected)) {
         if (strcmp("CONNECT", cmd.name) != 0) {
             ret = send_error(client, "Expected CONNECT");
-            return WORKER_CONTINUE;
+            val = WORKER_CONTINUE;
         } else {
             *connected = 1;
             sub->client = client;
             sub->name = cmd.headers[0].val; // has only one header
             ret = send_connected(client);
             printf("Broker: New Client '%s'\n", sub->name);
-            return WORKER_CONTINUE;
+            val = WORKER_CONTINUE;
         }
     } else {
         if (strcmp("SEND", cmd.name) == 0) {
             ret = process_send(ctx, client, cmd);
-            return WORKER_CONTINUE;
+            val = WORKER_CONTINUE;
         } else if (strcmp("SUBSCRIBE", cmd.name) == 0) {
             ret = process_subscribe(ctx, cmd, sub);
-            return WORKER_CONTINUE;
+            val = WORKER_CONTINUE;
         } else if (strcmp("DISCONNECT", cmd.name) == 0) {
             ret = process_disconnect(ctx, client, sub);
-            return WORKER_STOP;
+            val = WORKER_STOP;
         } else {
             // impossible, socket read would have failed
             assert(0);
-            return WORKER_STOP;
+            val = WORKER_STOP;
         }
     }
+
+    free(cmd.headers);
+    free(cmd.content);
+    return val;
 }
 
 int broker_context_init(struct broker_context *ctx) {
