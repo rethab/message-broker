@@ -17,8 +17,10 @@
 *.out
 *.app
 src/server
-test/client
+tst/client
 *.gcda
 *.gcno
 coverage
 coverage.info
+test
+run
