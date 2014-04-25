@@ -1,6 +1,6 @@
 CFLAGS=-Isrc -std=c99 -D_XOPEN_SOURCE=700 -Wall -lpthread 
 TEST_CFLAGS=-Itest -lcunit -g -rdynamic -ftest-coverage -fprofile-arcs -lgcov
-PROD_CFLAGS=-DNDEBUG -Wno-unused-but-set-variable -Wno-unused-variable
+PROD_CFLAGS=-DNDEBUG -Wno-unused-but-set-variable -Wno-unused-variable -rdynamic
 
 server: CFLAGS += $(PROD_CFLAGS)
 server: topic stomp broker socket distributor gc
@@ -8,7 +8,7 @@ server: topic stomp broker socket distributor gc
 
 client: CFLAGS += $(PROD_CFLAGS)
 client: stomp
-	gcc $(CFLAGS) -o src/client src/client.c src/stomp.o 
+	gcc $(CFLAGS) -o test/client test/client.c src/stomp.o 
 
 test: CFLAGS += $(TEST_CFLAGS)
 test: clean topic stomp socket broker distributor gc
@@ -40,10 +40,9 @@ gc: src/gc.c
 
 clean:
 	rm -fv {src,test}/*.o
-	rm -fv src/{server,client}
+	rm -fv src/server
+	rm -fv test/client
 	rm -rfv coverage/
 	rm -fv coverage.info
 	rm -fv {src/,}*.gcda
 	rm -fv {src/,}*.gcno
-	rm -fv src/server
-	rm -fv src/client
