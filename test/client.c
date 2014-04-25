@@ -18,6 +18,9 @@ struct thread_params {
     /* server to connect to */
     struct hostent *server;
     int port;
+
+    char *name;
+    int nmsgs;
 };
 
 /* connects to the server and returns
@@ -37,7 +40,7 @@ void *subscriber(void *arg) {
     char buf[1024];
     int ret;
 
-    ret = send_connect(sockfd, "subscriber");
+    ret = send_connect(sockfd, params->name);
     if (ret != 0)
         fprintf(stderr, "subscriber: Failed to connect\n");
     ret = expect_connected(sockfd);
@@ -64,14 +67,14 @@ void *sender(void *arg) {
     struct thread_params *params = arg;
     int sockfd = connect_to_server(params->server, params->port);
 
-    ret = send_connect(sockfd, "sender");
+    ret = send_connect(sockfd, params->name);
     if (ret != 0)
         fprintf(stderr, "sender: Failed to connect\n");
     ret = expect_connected(sockfd);
     if (ret != 0)
         fprintf(stderr, "sender: Missing connected\n");
 
-    for (int i = 0; i < 900; i++) {
+    for (int i = 0; i < params->nmsgs; i++) {
         char msg[64];
         char *topic = i % 2 == 0 ? "news" : "stocks";
         sprintf(msg, "price: 22.%d", i);
@@ -86,37 +89,14 @@ void *sender(void *arg) {
     return 0;
 }
 
-void *sender2(void *arg) {
-    int ret;
-    struct thread_params *params = arg;
-    int sockfd = connect_to_server(params->server, params->port);
-
-    ret = send_connect(sockfd, "sender2");
-    if (ret != 0)
-        fprintf(stderr, "sender2: Failed to connect\n");
-    ret = expect_connected(sockfd);
-    if (ret != 0)
-        fprintf(stderr, "sender2: Missing connected\n");
-
-    for (int i = 0; i < 700; i++) {
-        char msg[64];
-        char *topic = i % 2 == 0 ? "news" : "stocks";
-        sprintf(msg, "pre: 33.%d", i);
-        ret = send_send(sockfd, topic, msg);
-        if (ret != 0)
-            fprintf(stderr, "sender2: Failed to send to stocks\n");
-    }
-    ret = send_disconnect(sockfd, "sender2");
-    if (ret != 0)
-        fprintf(stderr, "sender2: Failed to send disconnect\n");
-
-    return 0;
-}
-
 int main(int argc, char *argv[]) {
     int ret;
-    if (argc < 3) {
-        fprintf(stderr,"usage %s hostname port\n", argv[0]);
+    if (argc < 5) {
+        fprintf(stderr,"usage %s hostname port name nmsgs\n", argv[0]);
+        fprintf(stderr,"\thostname: name of server\n");
+        fprintf(stderr,"\tport: port of server\n");
+        fprintf(stderr,"\tname: name to be used for login\n");
+        fprintf(stderr,"\tnmsgs: number of messages to send\n");
         exit(0);
     }
 
@@ -124,6 +104,8 @@ int main(int argc, char *argv[]) {
 
     params->port = atoi(argv[2]); 
     params->server = malloc(sizeof(struct hostent));
+    params->name = strdup(argv[3]);
+    params->nmsgs = atoi(argv[4]);
 
     params->server = gethostbyname(argv[1]);
     if (params->server == NULL) {
@@ -131,7 +113,7 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    pthread_t t1, t2, t3;
+    pthread_t t1, t2;
     ret = pthread_create(&t1, NULL, &subscriber, params);
     if (ret != 0) fprintf(stderr,"ERROR: %s\n", strerror(errno));
 
@@ -140,12 +122,12 @@ int main(int argc, char *argv[]) {
     pthread_create(&t2, NULL, &sender, params);
     if (ret != 0) fprintf(stderr,"ERROR: %s\n", strerror(errno));
 
-    pthread_create(&t3, NULL, &sender2, params);
-    if (ret != 0) fprintf(stderr,"ERROR: %s\n", strerror(errno));
+    //pthread_create(&t3, NULL, &sender2, params);
+    //if (ret != 0) fprintf(stderr,"ERROR: %s\n", strerror(errno));
 
     pthread_join(t1, NULL);
     pthread_join(t2, NULL);
-    pthread_join(t3, NULL);
+    //pthread_join(t3, NULL);
 
     return 0;
 }
