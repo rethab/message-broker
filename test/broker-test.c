@@ -86,11 +86,14 @@ void test_process_send() {
     struct stomp_header header;
     struct list topics;
     struct list messages;
-    struct subscriber sub;
+    struct client c;
+    struct subscriber sub = {&c, "foo"};
     struct message *msg;
     struct topic *topic;
     struct client client;
 
+
+    client_init(&c);
     cmd.name = "SEND";
     header.key = "topic";
     header.val = "stocks";
@@ -197,6 +200,7 @@ void test_process_disconnect() {
     struct client client;
 
     sub.name = "X2Y";
+    sub.client = &client;
 
     list_init(&topics);
     ctx.topics = &topics;
