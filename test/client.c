@@ -40,7 +40,10 @@ void *subscriber(void *arg) {
     char buf[1024];
     int ret;
 
-    ret = send_connect(sockfd, params->name);
+    char myname[128];
+    sprintf(myname, "subscriber/%s", params->name);
+
+    ret = send_connect(sockfd, myname);
     if (ret != 0)
         fprintf(stderr, "subscriber: Failed to connect\n");
     ret = expect_connected(sockfd);
@@ -67,7 +70,10 @@ void *sender(void *arg) {
     struct thread_params *params = arg;
     int sockfd = connect_to_server(params->server, params->port);
 
-    ret = send_connect(sockfd, params->name);
+    char myname[128];
+    sprintf(myname, "sender/%s", params->name);
+
+    ret = send_connect(sockfd, myname);
     if (ret != 0)
         fprintf(stderr, "sender: Failed to connect\n");
     ret = expect_connected(sockfd);
