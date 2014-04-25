@@ -156,6 +156,8 @@ int main_loop(struct broker_context *ctx,
     struct stomp_command cmd;
     cmd.headers = NULL;
     cmd.content = NULL;
+    cmd.name = NULL;
+    cmd.nheaders = 0;
 
     ret = socket_read_command(client, &cmd);
     if (ret == SOCKET_CLIENT_GONE || ret == SOCKET_NECROMANCE) {
@@ -199,8 +201,7 @@ int main_loop(struct broker_context *ctx,
         }
     }
 
-    free(cmd.headers);
-    free(cmd.content);
+    stomp_command_fields_destroy(&cmd);
     return val;
 }
 

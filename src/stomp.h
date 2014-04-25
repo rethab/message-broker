@@ -127,4 +127,7 @@ int create_command(struct stomp_command cmd, char** str);
  * the buffer should be 32 bytes */
 void stomp_strerror(int errcode, char *buf);
 
+/* frees up the fields */
+int stomp_command_fields_destroy(struct stomp_command *cmd);
+
 #endif

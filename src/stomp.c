@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "stomp.h"
 
@@ -73,7 +74,7 @@ static int parse_header(char *raw, struct stomp_command *cmd) {
         if (strcmp(cmd->headers[i].key, key) != 0)
             return STOMP_INVALID_HEADER;
         else 
-            cmd->headers[i].val = val;
+            cmd->headers[i].val = strdup(val);
 
         rawline = strtok_r(NULL, "\n", &saveraw);
         i++;
@@ -151,6 +152,7 @@ static int split_cmd(char *raw, char **header, char **content) {
 static int parse_command_generic(const char *cmdname,
         char *rawheader, const char *rawcontent,
         int expect_content, struct stomp_command *cmd) {
+    
     int parsed = parse_header(rawheader, cmd);
     if (parsed != 0) return parsed;
 
@@ -170,7 +172,7 @@ static int parse_command_generic(const char *cmdname,
 static int parse_command_connect(char *rawheader,
                 const char *rawcontent, struct stomp_command* cmd) {
     cmd->headers = malloc(sizeof(struct stomp_header));
-    cmd->headers[0].key = "login";
+    cmd->headers[0].key = strdup("login");
     cmd->nheaders = 1;
     return parse_command_generic("CONNECT", rawheader,
         rawcontent, 0, cmd);
@@ -179,7 +181,7 @@ static int parse_command_connect(char *rawheader,
 static int parse_command_send(char *rawheader,
                 const char *rawcontent, struct stomp_command* cmd) {
     cmd->headers = malloc(sizeof(struct stomp_header));
-    cmd->headers[0].key = "topic";
+    cmd->headers[0].key = strdup("topic");
     cmd->nheaders = 1;
     return parse_command_generic("SEND", rawheader,
         rawcontent, 1, cmd);
@@ -188,7 +190,7 @@ static int parse_command_send(char *rawheader,
 static int parse_command_subscribe(char *rawheader,
                 const char *rawcontent, struct stomp_command* cmd) {
     cmd->headers = malloc(sizeof(struct stomp_header));
-    cmd->headers[0].key = "destination";
+    cmd->headers[0].key = strdup("destination");
     cmd->nheaders = 1;
     return parse_command_generic("SUBSCRIBE", rawheader,
         rawcontent, 0, cmd);
@@ -327,4 +329,28 @@ void stomp_strerror(int errcode, char *buf) {
         default:
             sprintf(buf, "UNKNOWN_ERROR");
     }
+}
+
+int stomp_command_fields_destroy(struct stomp_command *cmd) {
+    free(cmd->name);
+    cmd->name = NULL;
+
+    free(cmd->content);
+    cmd->content = NULL;
+
+    // currently nothing has more headers
+    assert(cmd->nheaders < 2);
+    if (cmd->nheaders == 1) {
+        struct stomp_header *hdr = cmd->headers;
+        free(hdr->key);
+        hdr->key = NULL;
+
+        free(hdr->val);
+        hdr->val = NULL;
+
+        free(cmd->headers);
+        cmd->headers = NULL;
+    }
+
+    return 0;
 }
