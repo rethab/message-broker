@@ -112,6 +112,9 @@ void test_gc_collect_eligible_stats() {
     client_init(&client1);
     client_init(&client2);
     client_init(&client3);
+    msg_statistics_init(&stat11);
+    msg_statistics_init(&stat12);
+    msg_statistics_init(&stat13);
 
     // eligible
     stat11.nattempts = MAX_ATTEMPTS;
