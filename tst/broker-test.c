@@ -316,6 +316,39 @@ void test_handle_client_first_command_not_connect() {
     client_destroy(&client);
 }
 
+void test_main_loop_strdup_subscriber_name() {
+    // subscriber name must be strdup'ed
+    // because the stomp_command will be freed
+    struct broker_context ctx;
+    struct list topics;
+    struct list messages;
+    struct subscriber sub;
+    struct client client;
+    int connected = 0;
+    int fds[2];
+
+    client_init(&client);
+    assert(0 == socketpair(AF_UNIX, SOCK_STREAM, 0, fds));
+    client.sockfd = fds[0];
+    list_init(&messages);
+    list_init(&topics);
+    ctx.topics = &topics;
+    ctx.messages = &messages;
+
+    char cmd1[] = "CONNECT\nlogin:foo\n\n";
+
+    assert(0 < write(fds[1], cmd1, strlen(cmd1)+1));
+    CU_ASSERT_EQUAL_FATAL(WORKER_CONTINUE,
+        main_loop(&ctx, &client, &connected, &sub));
+
+    // fails if value was directly assigned,
+    // because command will be freed by now
+    free(sub.name);
+    list_destroy(&messages);
+    list_destroy(&topics);
+    client_destroy(&client);
+}
+
 void test_handle_client_send_command_unknown() {
     struct broker_context ctx;
     struct list topics;
@@ -476,7 +509,9 @@ void broker_test_suite() {
     CU_add_test(socketSuite,
         "test_handle_client_send_command_unknown",
         test_handle_client_send_command_unknown);
-
+    CU_add_test(socketSuite,
+        "test_main_loop_strdup_subscriber_name",
+        test_main_loop_strdup_subscriber_name);
     CU_add_test(socketSuite, "test_init_destory_context",
         test_init_destory_context);
     CU_add_test(socketSuite, "test_deliver_after_disconnect",

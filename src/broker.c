@@ -179,7 +179,7 @@ int main_loop(struct broker_context *ctx,
         } else {
             *connected = 1;
             sub->client = client;
-            sub->name = cmd.headers[0].val; // has only one header
+            sub->name = strdup(cmd.headers[0].val); // only one header
             ret = send_connected(client);
             printf("Broker: New Client '%s'\n", sub->name);
             val = WORKER_CONTINUE;
