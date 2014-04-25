@@ -107,6 +107,10 @@ void deliver_messages(struct list *messages) {
         ret = pthread_rwlock_rdlock(msg->stats->listrwlock);
         assert(ret == 0);
 
+
+        // walk through statistics of a message and check
+        // with read lock whether it is eligible. If yes,
+        // check again with write lock and deliver.
         struct node *curStat = msg->stats->root;
         while (curStat != NULL) {
             struct msg_statistics *stat = curStat->entry;
@@ -122,12 +126,13 @@ void deliver_messages(struct list *messages) {
             assert(ret == 0);
 
             if (eligible) {
-                // acquire read lock for statistic
+                // acquire write lock for statistic
                 ret = pthread_rwlock_wrlock(stat->statrwlock);
                 assert(ret == 0);
 
+                // check again to make sure
                 if (is_eligible(stat)) {
-                    deliver_message(msg, stat);    
+                    deliver_message(msg, stat); // requires write lock
                     nmsgs++;
                 }
                 
