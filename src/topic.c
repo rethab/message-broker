@@ -267,11 +267,56 @@ int topic_remove_subscriber(struct list *topics,
     return 0;
 }
 
+static int subscriber_dead(struct subscriber *sub) {
+    int ret;
+    int dead;
+
+    struct client *client = sub->client;
+
+    // acquire read lock on filedescriptor
+    ret = pthread_mutex_lock(client->mutex_r);
+    assert(ret == 0);
+    
+    // acquire read lock on dead flag
+    ret = pthread_mutex_lock(client->deadmutex);
+    assert(ret == 0);
+
+    dead = client->dead;
+    
+    // release read lock on dead flag
+    ret = pthread_mutex_unlock(client->deadmutex);
+    assert(ret == 0);
+
+    // release read lock on filedescriptor
+    ret = pthread_mutex_unlock(client->mutex_r);
+    assert(ret == 0);
+
+    return dead;
+}
+
+static int count_alive_subscriber(struct list *subscribers) {
+
+    int nsubs = 0;
+    
+    struct node *cur = subscribers->root;
+    while (cur != NULL) {
+        struct subscriber *sub = cur->entry;
+
+        if (!subscriber_dead(sub)) {
+            nsubs++;
+        }
+        
+        cur = cur->next;
+    }
+
+    return nsubs;
+}
+
 int topic_add_message(struct list *topics, struct list *messages,
         char *topicname, char *content){
 
     int ret; // to check other methods return values
-    int val = 0; // this return value
+    int val = -1; // this return value
     struct topic *topic;
 
     // acquire topics list lock
@@ -286,47 +331,57 @@ int topic_add_message(struct list *topics, struct list *messages,
         ret = pthread_rwlock_rdlock(topic->subscribers->listrwlock);
         assert(ret == 0);
 
-        if (list_empty(topic->subscribers)) {
+        if (count_alive_subscriber(topic->subscribers) == 0) {
             val = TOPIC_NO_SUBSCRIBERS;
-        }
-        
-        // release subscribers list readlock
-        ret = pthread_rwlock_unlock(topic->subscribers->listrwlock);
-        assert(ret == 0);
-    }
 
-    // topics exists with subscribers, proceed regularly
-    if (val == 0) {
-        // message
-        struct message *msg = malloc(sizeof(struct message));
-        message_init(msg);
-        msg->content = strdup(content);
-        msg->topicname = strdup(topicname);
-
-        // statistics, subs from topic
-        struct node *cur = topic->subscribers->root;
-        while (cur != NULL) {
-            struct subscriber *sub = cur->entry;
-            struct msg_statistics *stat =
-                malloc(sizeof(struct msg_statistics));
-            msg_statistics_init(stat);
-            stat->last_fail = 0;
-            stat->nattempts = 0;
-            stat->subscriber = sub;
-            int ret = list_add(msg->stats, stat);
+            // release subscribers list readlock
+            ret = pthread_rwlock_unlock(topic->subscribers->listrwlock);
             assert(ret == 0);
-            cur = cur->next;
+        } else {
+
+            // create message and copy subscribers
+
+            struct message *msg = malloc(sizeof(struct message));
+            message_init(msg);
+            msg->content = strdup(content);
+            msg->topicname = strdup(topicname);
+
+            // add statistics entry for each alive subscriber
+            struct node *cur = topic->subscribers->root;
+            while (cur != NULL) {
+                struct subscriber *sub = cur->entry;
+
+                if (!subscriber_dead(sub)) {
+                    struct msg_statistics *stat =
+                        malloc(sizeof(struct msg_statistics));
+                    msg_statistics_init(stat);
+                    stat->last_fail = 0;
+                    stat->nattempts = 0;
+                    stat->subscriber = sub;
+                    int ret = list_add(msg->stats, stat);
+                    assert(ret == 0);
+                }
+
+                cur = cur->next;
+            }
+
+            // release subscribers list readlock
+            ret = pthread_rwlock_unlock(topic->subscribers->listrwlock);
+            assert(ret == 0);
+
+            // acquire write lock for message list
+            ret = pthread_rwlock_wrlock(messages->listrwlock);
+            assert(ret == 0);
+
+            ret = list_add(messages, msg);
+            assert(ret == 0);
+
+            // release write lock for messages list
+            ret = pthread_rwlock_unlock(messages->listrwlock);
+            assert(ret == 0);
+
+            val = 0;
         }
-
-        // acquire write lock for message list
-        ret = pthread_rwlock_wrlock(messages->listrwlock);
-        assert(ret == 0);
-
-        val = list_add(messages, msg);
-
-        // release write lock for messages list
-        ret = pthread_rwlock_unlock(messages->listrwlock);
-        assert(ret == 0);
     }
 
     // release topics list readlock

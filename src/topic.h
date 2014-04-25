@@ -5,6 +5,10 @@
 
 #define TOPIC_CREATION_FAILED -2
 #define TOPIC_NOT_FOUND       -3
+/* no subscribers in topic and therefore
+ * it is not possible to add a message.
+ * this may also be returned if only
+ * dead subscribers are in the topic */
 #define TOPIC_NO_SUBSCRIBERS  -4
 
 /* client interested in messages of a topic */

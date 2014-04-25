@@ -13,6 +13,22 @@ static struct client c1;
 static struct client c2;
 static struct client c3;
 
+static void topic_before_test() {
+    client_init(&c1);
+    client_init(&c2);
+    client_init(&c3);
+
+    c1.dead = 0;
+    c2.dead = 0;
+    c3.dead = 0;
+}
+
+static void topic_after_test() {
+    client_destroy(&c1);
+    client_destroy(&c2);
+    client_destroy(&c3);
+}
+
 /* returns the number of topics the subscriber is subscribed
  * to. 0 if it does not exist */
 static int nsubs(struct list *list, struct subscriber *sub) {
@@ -257,6 +273,7 @@ void test_topic_remove_subscriber() {
 }
 
 void test_add_message_1() {
+    topic_before_test();
     int ret;
     struct list topics;
     struct list messages;
@@ -282,9 +299,12 @@ void test_add_message_1() {
     CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
     CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
     CU_ASSERT_EQUAL_FATAL(&sub1, msgstats->subscriber);
+
+    topic_after_test();
 }
 
 void test_add_message_2() {
+    topic_before_test();
     int ret;
     struct list topics;
     struct list messages;
@@ -316,9 +336,11 @@ void test_add_message_2() {
     CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
     CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
     CU_ASSERT_EQUAL_FATAL(&sub2, msgstats->subscriber);
+    topic_after_test();
 }
 
 void test_add_message_3() {
+    topic_before_test();
     int ret;
     struct list topics;
     struct list messages;
@@ -368,10 +390,12 @@ void test_add_message_3() {
     CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
     CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
     CU_ASSERT_EQUAL_FATAL(&sub2, msgstats->subscriber);
+    topic_after_test();
 }
 
 
 void test_add_message_late_subscriber() {
+    topic_before_test();
     int ret;
     struct list topics;
     struct list messages;
@@ -385,8 +409,7 @@ void test_add_message_late_subscriber() {
 
     topic_add_subscriber(&topics, "stocks", &sub1);
 
-    // subscriber gets messages that were sent before
-    // his arrival
+    // send first message
     ret = topic_add_message(&topics, &messages, "stocks", "price: 33");
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_EQUAL_FATAL(1, list_len(&messages));
@@ -431,6 +454,55 @@ void test_add_message_late_subscriber() {
     CU_ASSERT_EQUAL_FATAL(0, msgstats->last_fail);
     CU_ASSERT_EQUAL_FATAL(0, msgstats->nattempts);
     CU_ASSERT_EQUAL_FATAL(&sub2, msgstats->subscriber);
+    topic_after_test();
+}
+
+void test_add_message_dead_subscriber() {
+    topic_before_test();
+    int ret;
+    struct list topics;
+    struct list messages;
+    struct subscriber sub1 = {&c1, "hans"};
+    list_init(&topics);
+    list_init(&messages);
+
+    topic_add_subscriber(&topics, "stocks", &sub1);
+
+    // set client 1 to dead, should not be copied to
+    // statistics for message anymore
+    c1.dead = 1;
+
+    ret = topic_add_message(&topics, &messages, "stocks", "price: 33");
+    CU_ASSERT_EQUAL_FATAL(TOPIC_NO_SUBSCRIBERS, ret);
+    topic_after_test();
+}
+
+void test_add_message_dead_subscriber_2() {
+    topic_before_test();
+    int ret;
+    struct list topics;
+    struct list messages;
+    struct message *msg;
+    struct msg_statistics *msgstats;
+    struct subscriber sub1 = {&c1, "hans"};
+    struct subscriber sub2 = {&c2, "jakob"};
+    list_init(&topics);
+    list_init(&messages);
+
+    topic_add_subscriber(&topics, "stocks", &sub1);
+    topic_add_subscriber(&topics, "stocks", &sub2);
+
+    // set client 1 to dead, should not be copied to
+    // statistics for message anymore
+    c1.dead = 1;
+
+    ret = topic_add_message(&topics, &messages, "stocks", "price: 33");
+    assert(ret == 0);
+    msg = messages.root->entry;
+    CU_ASSERT_EQUAL_FATAL(1, list_len(msg->stats));
+    msgstats = msg->stats->root->entry;
+    CU_ASSERT_EQUAL_FATAL(&sub2, msgstats->subscriber);
+    topic_after_test();
 }
 
 
@@ -461,6 +533,7 @@ void test_add_message_no_subscriber() {
 }
 
 void test_msg_remove_subscriber_first() {
+    topic_before_test();
     int ret;
     struct list topics;
     struct list messages;
@@ -480,9 +553,11 @@ void test_msg_remove_subscriber_first() {
     CU_ASSERT_EQUAL_FATAL(1, list_len(msg->stats));
     stat = msg->stats->root->entry;
     CU_ASSERT_EQUAL_FATAL(&sub2, stat->subscriber);
+    topic_after_test();
 }
 
 void test_msg_remove_subscriber_second() {
+    topic_before_test();
     int ret;
     struct list topics;
     struct list messages;
@@ -502,9 +577,11 @@ void test_msg_remove_subscriber_second() {
     CU_ASSERT_EQUAL_FATAL(1, list_len(msg->stats));
     stat = msg->stats->root->entry;
     CU_ASSERT_EQUAL_FATAL(&sub1, stat->subscriber);
+    topic_after_test();
 }
 
 void test_msg_remove_subscriber_last() {
+    topic_before_test();
     int ret;
     struct list topics;
     struct list messages;
@@ -526,9 +603,11 @@ void test_msg_remove_subscriber_last() {
     topic_add_message(&topics, &messages, "stocks", "price: 34");
     ret = message_remove_subscriber(&messages, &sub1);
     CU_ASSERT_EQUAL_FATAL(0, ret);
+    topic_after_test();
 }
 
 void test_msg_remove_subscriber_not_subscribed() {
+    topic_before_test();
     struct list topics;
     struct list messages;
     struct subscriber sub1 = {&c1, "hans"};
@@ -540,6 +619,7 @@ void test_msg_remove_subscriber_not_subscribed() {
 
     int ret = message_remove_subscriber(&messages, &sub2);
     CU_ASSERT_EQUAL_FATAL(0, ret);
+    topic_after_test();
 }
 
 void test_topic_strerror() {
@@ -603,6 +683,10 @@ void topic_add_topic_suite() {
     CU_add_test(topicSuite, "test_add_message_5", test_add_message_5);
     CU_add_test(topicSuite, "test_add_message_no_subscriber",
         test_add_message_no_subscriber);
+    CU_add_test(topicSuite, "test_add_message_dead_subscriber",
+        test_add_message_dead_subscriber);
+    CU_add_test(topicSuite, "test_add_message_dead_subscriber_2",
+        test_add_message_dead_subscriber_2);
     CU_add_test(topicSuite, "test_msg_remove_subscriber_first",
         test_msg_remove_subscriber_first);
     CU_add_test(topicSuite, "test_msg_remove_subscriber_second",
