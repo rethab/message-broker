@@ -1,10 +1,47 @@
 #ifndef TOPIC_HEADER
 #define TOPIC_HEADER
 
+/* topic.h
+ *
+ * the message broker has two central lists:
+ *  1. topics
+ *  2. messages
+ * both of them are fields in the broker_context
+ * struct that is passed around from top-level.
+ *
+ * 1. topics
+ * whenever a client subscribers to a topic, an
+ * entry in the topics list is added if the
+ * topic does not exist yet. if it exists, the
+ * subscriber is added to the list of subscribers
+ * in that topic.
+ *
+ * 2. messages
+ * for each message that gets sent to a topic,
+ * the list of subscribers to that topic is copied
+ * and an entry is added to the list of messages
+ * containing the name of the topic the message
+ * was sent to, the message itself and the list
+ * of subscribers. the list of subscribers is not
+ * copied 1:1 though, as weed a little more
+ * information for each subscriber (e.g. whether
+ * is was already delivered to that subscriber,
+ * etc). Therefore, the list of subscribers in
+ * the message list is a list of msg_statistics,
+ * which contains the additional information.
+ *
+ */
+
+#include "list.h"
 #include "socket.h"
 
-#define TOPIC_CREATION_FAILED -2
+/* returned if a message is added to
+ * a topic that does not exist. note
+ * that a topic is created with the 
+ * first subscriber and not with the first
+ * message */
 #define TOPIC_NOT_FOUND       -3
+
 /* no subscribers in topic and therefore
  * it is not possible to add a message.
  * this may also be returned if only
@@ -81,6 +118,12 @@ struct message {
     struct list *stats;
 };
 
+/* initializes a topic */
+int topic_init(struct topic *topic);
+
+/* destroys a topic */
+int topic_destroy(struct topic *topic);
+
 /* initializes a message */
 int message_init(struct message *message);
 
@@ -120,59 +163,4 @@ int message_remove_subscriber(struct list *messages,
 /* converts a topic error code (TOPIC_) to a string.
  * the buffer should be 32 bytes */
 void topic_strerror(int errcode, char *buf);
-
-
-#define LIST_NOT_FOUND -2
-
-/* root node of a linked list */
-struct list {
-
-    /* guards the list as a whole.
-     * it is to be held in write
-     * lock if the list is modified
-     * (add, remove) and in read
-     * mode if the contents are
-     * (e.g. statistics updated).
-     */
-    pthread_rwlock_t *listrwlock;
-
-    /* root node of the linked list */
-    struct node *root;
-};
-
-/* node in a list. guarded by
- * listrwlock (in list struct) as
- * a whole and (potentially) by
- * locks in individual entries
- */
-struct node {
-    /* value of the node */
-    void *entry;
-
-    /* pointer to next node. null
-     * if this node marks the end */
-    struct node *next;   
-};
-
-/* initialize the list*/
-int list_init(struct list *list);
-
-/* frees the list. must be empty */
-int list_destroy(struct list *list);
-
-/* adds an entry to the end of the list */
-int list_add(struct list *list, void *entry);
-
-/* removes an element from the list */
-int list_remove(struct list *list, void *entry);
-
-/* checks whether the list is empty */
-int list_empty(struct list *list);
-
-/* empties the list */
-int list_clean(struct list *list);
-
-/* returns the number of elements in the list */
-int list_len(struct list *list);
-
 #endif

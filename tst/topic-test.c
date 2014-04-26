@@ -57,146 +57,6 @@ static struct message *message_find_by_content(struct list *messages,
     return NULL;
 }
 
-/* checks whether an entry exists */
-static int list_exists(struct list *list, void *entry) {
-    struct node *cur = list->root;
-    for (; cur != NULL; cur = cur->next) {
-        if (cur->entry == entry) return 1;
-    }
-    return 0;
-}
-
-/* TESTS */
-
-void test_list_len() {
-    char a;
-    struct list list;
-
-    // delete in the middle
-    list_init(&list);
-    CU_ASSERT_EQUAL_FATAL(0, list_len(&list));
-
-    list_add(&list, &a);
-    CU_ASSERT_EQUAL_FATAL(1, list_len(&list));
-
-    list_add(&list, &a);
-    CU_ASSERT_EQUAL_FATAL(2, list_len(&list));
-
-    list_remove(&list, &a);
-    CU_ASSERT_EQUAL_FATAL(1, list_len(&list));
-
-    list_remove(&list, &a);
-    CU_ASSERT_EQUAL_FATAL(0, list_len(&list));
-}
-
-void test_list_empty() {
-    char a;
-    struct list list;
-
-    // delete in the middle
-    list_init(&list);
-    list_add(&list, &a);
-    CU_ASSERT_EQUAL_FATAL(0, list_empty(&list));
-
-    list_remove(&list, &a);
-    CU_ASSERT_EQUAL_FATAL(1, list_empty(&list));
-
-    list_init(&list);
-    CU_ASSERT_EQUAL_FATAL(1, list_empty(&list));
-}
-
-void test_add_remove_list() {
-    char a,b,c,d;
-    int ret;
-    struct list list;
-
-    // delete in the middle
-    list_init(&list);
-    list_add(&list, &a);
-    list_add(&list, &b);
-    list_add(&list, &c);
-    ret = list_remove(&list, &b);
-    CU_ASSERT_EQUAL_FATAL(0, ret);
-    CU_ASSERT_EQUAL_FATAL(1, list_exists(&list, &a));
-    CU_ASSERT_EQUAL_FATAL(0, list_exists(&list, &b));
-    CU_ASSERT_EQUAL_FATAL(1, list_exists(&list, &c));
-    CU_ASSERT_EQUAL_FATAL(2, list_len(&list));
-
-    // delete last
-    list_init(&list);
-    list_add(&list, &a);
-    list_add(&list, &b);
-    list_add(&list, &c);
-    ret = list_remove(&list, &c);
-    CU_ASSERT_EQUAL_FATAL(0, ret);
-    CU_ASSERT_EQUAL_FATAL(1, list_exists(&list, &a));
-    CU_ASSERT_EQUAL_FATAL(1, list_exists(&list, &b));
-    CU_ASSERT_EQUAL_FATAL(0, list_exists(&list, &c));
-    CU_ASSERT_EQUAL_FATAL(2, list_len(&list));
-
-    // delete first
-    list_init(&list);
-    list_add(&list, &a);
-    list_add(&list, &b);
-    list_add(&list, &c);
-    ret = list_remove(&list, &a);
-    CU_ASSERT_EQUAL_FATAL(0, ret);
-    CU_ASSERT_EQUAL_FATAL(0, list_exists(&list, &a));
-    CU_ASSERT_EQUAL_FATAL(1, list_exists(&list, &b));
-    CU_ASSERT_EQUAL_FATAL(1, list_exists(&list, &c));
-    CU_ASSERT_EQUAL_FATAL(2, list_len(&list));
-
-    // delete all
-    list_init(&list);
-    list_add(&list, &a);
-    list_add(&list, &b);
-    list_add(&list, &c);
-    ret = list_remove(&list, &a);
-    CU_ASSERT_EQUAL_FATAL(0, ret);
-    CU_ASSERT_EQUAL_FATAL(0, list_exists(&list, &a));
-    CU_ASSERT_EQUAL_FATAL(1, list_exists(&list, &b));
-    CU_ASSERT_EQUAL_FATAL(1, list_exists(&list, &c));
-    CU_ASSERT_EQUAL_FATAL(2, list_len(&list));
-    ret = list_remove(&list, &b);
-    CU_ASSERT_EQUAL_FATAL(0, ret);
-    CU_ASSERT_EQUAL_FATAL(0, list_exists(&list, &a));
-    CU_ASSERT_EQUAL_FATAL(0, list_exists(&list, &b));
-    CU_ASSERT_EQUAL_FATAL(1, list_exists(&list, &c));
-    CU_ASSERT_EQUAL_FATAL(1, list_len(&list));
-    ret = list_remove(&list, &c);
-    CU_ASSERT_EQUAL_FATAL(0, ret);
-    CU_ASSERT_EQUAL_FATAL(0, list_exists(&list, &a));
-    CU_ASSERT_EQUAL_FATAL(0, list_exists(&list, &b));
-    CU_ASSERT_EQUAL_FATAL(0, list_exists(&list, &c));
-    CU_ASSERT_EQUAL_FATAL(0, list_len(&list));
-
-    // delete two in the middle
-    list_init(&list);
-    list_add(&list, &a);
-    list_add(&list, &b);
-    list_add(&list, &c);
-    list_add(&list, &d);
-    ret = list_remove(&list, &b);
-    ret = list_remove(&list, &c);
-    CU_ASSERT_EQUAL_FATAL(0, ret);
-    CU_ASSERT_EQUAL_FATAL(1, list_exists(&list, &a));
-    CU_ASSERT_EQUAL_FATAL(0, list_exists(&list, &b));
-    CU_ASSERT_EQUAL_FATAL(0, list_exists(&list, &c));
-    CU_ASSERT_EQUAL_FATAL(1, list_exists(&list, &d));
-    CU_ASSERT_EQUAL_FATAL(2, list_len(&list));
-
-    // remove inexistent
-    list_init(&list);
-    list_add(&list, &a);
-    list_add(&list, &b);
-    ret = list_remove(&list, &d);
-    CU_ASSERT_EQUAL_FATAL(LIST_NOT_FOUND, ret);
-    CU_ASSERT_EQUAL_FATAL(1, list_exists(&list, &a));
-    CU_ASSERT_EQUAL_FATAL(1, list_exists(&list, &b));
-    CU_ASSERT_EQUAL_FATAL(0, list_exists(&list, &d));
-    CU_ASSERT_EQUAL_FATAL(2, list_len(&list));
-} 
-
 void test_topic_add_subscriber() {
     int ret;
     struct list ts;
@@ -234,6 +94,25 @@ void test_topic_add_subscriber() {
     CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, &sub1));
     CU_ASSERT_EQUAL_FATAL(2, nsubs(&ts, &sub2));
     CU_ASSERT_EQUAL_FATAL(1, nsubs(&ts, &sub3));
+}
+
+void test_topic_init_and_destroy() {
+    int ret;
+
+    struct topic t;
+    struct subscriber sub;
+    
+    ret = topic_init(&t);   
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    // would fail if list of subscribers
+    // was not correctly initialized
+    ret = list_add(t.subscribers, &sub);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    ret = topic_destroy(&t);   
+    CU_ASSERT_PTR_NULL_FATAL(t.name);
+    CU_ASSERT_PTR_NULL_FATAL(t.subscribers);
 }
 
 void test_topic_remove_subscriber() {
@@ -624,9 +503,6 @@ void test_msg_remove_subscriber_not_subscribed() {
 
 void test_topic_strerror() {
     char buf[32];
-    topic_strerror(TOPIC_CREATION_FAILED, buf);
-    CU_ASSERT_STRING_EQUAL_FATAL("TOPIC_CREATION_FAILED", buf);
-
     topic_strerror(TOPIC_NOT_FOUND, buf);
     CU_ASSERT_STRING_EQUAL_FATAL("TOPIC_NOT_FOUND", buf);
 
@@ -636,37 +512,6 @@ void test_topic_strerror() {
     topic_strerror(-1, buf);
     CU_ASSERT_STRING_EQUAL_FATAL("UNKNOWN_ERROR", buf);
 
-}
-
-void test_list_clean() {
-    int ret;
-
-    struct list messages;
-    list_init(&messages);
-
-    struct message *m1 = malloc(sizeof(struct message));
-    struct message *m2 = malloc(sizeof(struct message));
-    message_init(m1);
-    message_init(m2);
-    list_add(&messages, m1);
-    list_add(&messages, m2);
-
-    ret = list_clean(&messages);
-    CU_ASSERT_EQUAL_FATAL(0, ret);
-
-    CU_ASSERT_PTR_NULL_FATAL(messages.root);
-
-    list_destroy(&messages);
-}
-
-void topic_add_list_suite() {
-    CU_pSuite listSuite = CU_add_suite("list", NULL, NULL);
-    CU_add_test(listSuite, "test_add_remove_list",
-        test_add_remove_list);
-    CU_add_test(listSuite, "test_list_empty",
-        test_list_empty);
-    CU_add_test(listSuite, "test_list_clean",
-        test_list_clean);
 }
 
 void topic_add_topic_suite() {
@@ -695,6 +540,8 @@ void topic_add_topic_suite() {
         test_msg_remove_subscriber_last);
     CU_add_test(topicSuite, "test_msg_remove_subscriber_not_subscribed",
         test_msg_remove_subscriber_not_subscribed);
+    CU_add_test(topicSuite, "test_topic_init_and_destroy",
+        test_topic_init_and_destroy);
     CU_add_test(topicSuite, "test_topic_strerror",
         test_topic_strerror);
 }

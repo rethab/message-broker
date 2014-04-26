@@ -6,120 +6,6 @@
 
 #include "topic.h"
 
-int list_init(struct list *list) {
-
-    int ret;
-
-    pthread_rwlock_t *rwlock = malloc(sizeof(pthread_rwlock_t));
-    assert(rwlock != NULL);
-    ret = pthread_rwlock_init(rwlock, NULL);
-    assert(ret == 0);
-    list->listrwlock = rwlock;
-
-    list->root = NULL;
-
-    return 0;
-}
-
-int list_destroy(struct list *list) {
-
-    int ret;
-    
-    assert(list->root == NULL);
-
-    ret = pthread_rwlock_destroy(list->listrwlock);
-    assert(ret == 0);
-    free(list->listrwlock);
-    list->listrwlock = NULL;
-
-    list->root = NULL;
-
-    return 0;
-}
-
-int list_add(struct list *list, void *entry) {
-    if (list->root == NULL) {
-        list->root = malloc(sizeof (struct node));
-        assert(list->root != NULL);
-        list->root->entry = entry;
-        list->root->next = NULL;
-    } else {
-        struct node *cur = list->root;
-        for (;cur->next != NULL; cur = cur->next);
-        cur->next = malloc(sizeof(struct list));
-        assert(cur->next != NULL);
-        cur->next->entry = entry;
-        cur->next->next = NULL;
-    }
-    return 0;
-}
-
-int list_empty(struct list *list) {
-    return list->root == NULL;
-}
-
-/* returns the number of elements in a list */
-int list_len(struct list *list) {
-    struct node *cur = list->root;
-    int n = 0;
-    for (; cur != NULL; cur = cur->next) {
-        n++;
-    }
-    return n;
-}
-
-
-/* removes an element from the list based on the
- * compare function. the third arg is passed
- * to the compare function as the second parameter
- */
-static int list_remove_generic(struct list *list,
-        int (*cmp)(const void *, const void *),
-        const void *entry) {
-    // empty list
-    if (list->root == NULL) return LIST_NOT_FOUND;
-
-    // replace root
-    if (cmp(list->root->entry, entry)) {
-        struct node *nxt = list->root->next;
-        free(list->root);
-        list->root = nxt;
-        return 0;
-    }
-    struct node *prev = list->root;
-    struct node *cur = list->root->next;
-    while (cur != NULL) {
-        if (cmp(cur->entry, entry)) {
-            prev->next = cur->next;
-            free(cur);
-            return 0;
-        } else {
-            prev = cur;
-            cur = cur->next;
-        }
-    }
-    return LIST_NOT_FOUND;
-}
-
-static int list_cmp_same_ref(const void *a, const void *b) {
-    return a == b;
-}
-
-int list_remove(struct list *list, void *entry) {
-    return list_remove_generic(list, list_cmp_same_ref, entry);
-}
-
-int list_clean(struct list *messages) {
-    struct node *cur = messages->root;
-    while (cur != NULL) {
-        struct node *next = cur->next;
-        free(cur);
-        cur = next;
-    }
-    messages->root = NULL;
-    return 0;
-}
-
 /* at least read lock for list of topics must be held by 
  * the funciton calling this function */
 static struct topic *find_topic(struct list *topics, char *name) {
@@ -134,16 +20,17 @@ static struct topic *find_topic(struct list *topics, char *name) {
     return NULL;
 }
 
+/* write lock on topic list must be held */
 static struct topic *create_new_topic(struct list *topics, char *name) {
     int ret;
 
     struct topic *topic = malloc(sizeof(struct topic));
     assert(topic != NULL);
 
+    ret = topic_init(topic);
+    assert(ret == 0);
+
     topic->name = strdup(name);
-    topic->subscribers = malloc(sizeof(struct list));
-    assert(topic->subscribers != NULL);
-    list_init(topic->subscribers);
 
     ret = list_add(topics, topic);
     assert(ret == 0);
@@ -427,9 +314,6 @@ int message_remove_subscriber(struct list *messages,
 
 void topic_strerror(int errcode, char *buf) {
     switch (errcode) {
-        case TOPIC_CREATION_FAILED:
-            sprintf(buf, "TOPIC_CREATION_FAILED");
-            break;
         case TOPIC_NOT_FOUND:
             sprintf(buf, "TOPIC_NOT_FOUND");
             break;
@@ -439,6 +323,33 @@ void topic_strerror(int errcode, char *buf) {
         default:
             sprintf(buf, "UNKNOWN_ERROR");
     }
+}
+
+int topic_init(struct topic *topic) {
+
+    int ret;
+
+    topic->subscribers = malloc(sizeof(struct list));
+    assert(topic->subscribers != NULL);
+
+    ret = list_init(topic->subscribers);
+    assert(ret == 0);
+
+    return 0;
+}
+
+int topic_destroy(struct topic *topic) {
+
+    list_clean(topic->subscribers);
+    list_destroy(topic->subscribers);
+
+    free(topic->subscribers);
+    topic->subscribers = NULL;
+
+    free(topic->name);
+    topic->name = NULL;
+    
+    return 0;
 }
 
 int message_init(struct message *message) {
