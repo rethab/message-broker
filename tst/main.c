@@ -13,6 +13,7 @@
 #include "broker-test.c"
 #include "distributor-test.c"
 #include "gc-test.c"
+#include "list-test.c"
 
 int main(int argc, char **argv) {
     install_segfault_handler();
