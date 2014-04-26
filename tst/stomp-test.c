@@ -264,8 +264,6 @@ void *_run_stuff(void * _) {
         }
     }
 
-    printf("Returning: %d\n", *ret);
-
     pthread_exit(ret);
 }
 
