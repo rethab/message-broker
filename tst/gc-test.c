@@ -509,6 +509,10 @@ void test_gc_run_gc() {
     struct broker_context ctx;
     broker_context_init(&ctx);
 
+    struct topic topic;
+    topic_init(&topic);
+    list_add(ctx.topics, &topic);
+
     // message to be removed in first pass
     struct message msg1;
     message_init(&msg1);
@@ -522,14 +526,16 @@ void test_gc_run_gc() {
     list_add(ctx.messages, &msg2);
     struct msg_statistics stat2;
     struct subscriber sub2;
-    struct client client2;
-    client_init(&client2);
-    sub2.client = &client2;
+    struct client *client2 = malloc(sizeof(struct client));
+    client_init(client2);
+    sub2.name = strdup("sub name");
+    sub2.client = client2;
     msg_statistics_init(&stat2);
     list_add(msg2.stats, &stat2);
     stat2.nattempts = 3;
     stat2.last_fail = timestamp();
     stat2.subscriber = &sub2;
+    list_add(topic.subscribers, &sub2);
     
     // first pass: remove msg1
     ret = gc_run_gc(&ctx);
@@ -538,23 +544,114 @@ void test_gc_run_gc() {
     CU_ASSERT_PTR_NULL_FATAL(ctx.messages->root->next);
     // statstics are gone
     CU_ASSERT_PTR_NOT_NULL_FATAL(msg2.stats->root);
+    // subscriber still there
+    CU_ASSERT_EQUAL_FATAL(&sub2, topic.subscribers->root->entry);
 
-    // increase number of failed attempts to make it 
+    // set client to dead to make it
     // eligible for garbage collection
-    stat2.nattempts = MAX_ATTEMPTS;
+    client2->dead = 1;
 
     // second pass: remove msg2 with stat2
     ret = gc_run_gc(&ctx);
     CU_ASSERT_EQUAL_FATAL(0, ret);
     CU_ASSERT_PTR_NULL_FATAL(ctx.messages->root);
+    // subscriber removed
+    CU_ASSERT_PTR_NULL_FATAL(topic.subscribers->root);
 
     // cleanup should have been done
     CU_ASSERT_PTR_NULL_FATAL(msg2.stats);
     CU_ASSERT_PTR_NULL_FATAL(msg1.stats);
     CU_ASSERT_PTR_NULL_FATAL(stat2.statrwlock);
 
+    list_clean(ctx.topics);
     broker_context_destroy(&ctx);
-    client_destroy(&client2);
+}
+
+void test_gc_remove_eligible_subscribers() {
+    int ret;
+    struct list eligible;
+    struct list topics;
+    struct topic t1;
+    struct topic t2;
+    struct topic t3;
+    struct subscriber s1;
+    struct subscriber s2;
+    struct subscriber s3;
+
+    list_init(&eligible);
+    list_init(&topics);
+    topic_init(&t1);
+    topic_init(&t2);
+    topic_init(&t3);
+    t1.name = strdup("t1");
+    t2.name = strdup("t2");
+    t3.name = strdup("t3");
+    list_add(&topics, &t1);
+    list_add(&topics, &t2);
+    list_add(&topics, &t3);
+    list_add(t1.subscribers, &s1);
+    list_add(t1.subscribers, &s2);
+    list_add(t2.subscribers, &s1);
+    list_add(t2.subscribers, &s3);
+    list_add(t3.subscribers, &s2);
+    list_add(t3.subscribers, &s3);
+
+    // s1 and s3 are eligible
+    list_add(&eligible, &s1);
+    list_add(&eligible, &s3);
+
+    ret = gc_remove_eligible_subscribers(&topics, &eligible);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    // s2 left in t1
+    CU_ASSERT_EQUAL_FATAL(&s2, t1.subscribers->root->entry);
+    CU_ASSERT_PTR_NULL_FATAL(t1.subscribers->root->next);
+
+    // none is left in t2
+    CU_ASSERT_PTR_NULL_FATAL(t2.subscribers->root);
+
+    // s2 left in t3
+    CU_ASSERT_EQUAL_FATAL(&s2, t3.subscribers->root->entry);
+    CU_ASSERT_PTR_NULL_FATAL(t3.subscribers->root->next);
+
+    topic_destroy(&t1);
+    topic_destroy(&t2);
+    topic_destroy(&t3);
+    list_clean(&topics);
+    list_destroy(&topics);
+    list_clean(&eligible);
+    list_destroy(&eligible);
+}
+
+void test_gc_cleanup_subscribers() {
+    int ret;
+    struct list eligible;
+    struct subscriber *s1 = malloc(sizeof(struct subscriber));
+    struct subscriber *s2 = malloc(sizeof(struct subscriber));
+    struct client *c1 = malloc(sizeof(struct client));
+    struct client *c2 = malloc(sizeof(struct client));
+
+    s1->name = strdup("foo");
+    s1->client = c1;
+    s2->name = strdup("bar");
+    s2->client = c2;
+
+    client_init(c1);
+    client_init(c2);
+    list_init(&eligible);
+    list_add(&eligible, s1);
+    list_add(&eligible, s2);
+
+    ret = gc_destroy_subscribers(&eligible);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    CU_ASSERT_PTR_NULL_FATAL(s1->name);
+    CU_ASSERT_PTR_NULL_FATAL(s1->client);
+    CU_ASSERT_PTR_NULL_FATAL(s2->name);
+    CU_ASSERT_PTR_NULL_FATAL(s2->client);
+
+    list_clean(&eligible);
+    list_destroy(&eligible);
 }
 
 void gc_test_suite() {
@@ -577,6 +674,10 @@ void gc_test_suite() {
         test_gc_remove_eligible_stats); 
     CU_add_test(gcSuite, "test_gc_remove_eligible_stats_twice",
         test_gc_remove_eligible_stats_twice); 
+    CU_add_test(gcSuite, "test_gc_remove_eligible_subscribers",
+        test_gc_remove_eligible_subscribers); 
+    CU_add_test(gcSuite, "test_gc_cleanup_subscribers",
+        test_gc_cleanup_subscribers); 
     CU_add_test(gcSuite, "test_gc_run_gc",
         test_gc_run_gc); 
 }

@@ -54,6 +54,13 @@ int gc_remove_eligible_stats(struct list *messages,
 int gc_remove_eligible_msgs(struct list *messages,
                             struct list *eligible);
 
+/* removes all subscribers (2nd param) from the topics */
+int gc_remove_eligible_subscribers(struct list *topics,
+                                   struct list *eligible);
+
+/* destroys all subscribers and associated clients */
+int gc_destroy_subscribers(struct list *subscribers);
+
 /* runs the garbage collection once. to
  * be invoked by 'gc_main_loop' continuously. */
 int gc_run_gc(struct broker_context *ctx);

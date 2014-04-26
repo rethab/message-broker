@@ -55,33 +55,55 @@ int gc_run_gc(struct broker_context *ctx) {
      * */
     int ret;
 
-    struct list messages;
-    struct list stats;
-
-    list_init(&stats);
-    list_init(&messages);
 
     // collect and remove statistic
+    struct list stats;
+    ret = list_init(&stats);
+    assert(ret == 0);
     ret = gc_collect_eligible_stats(ctx->messages, &stats);
     assert(ret == 0);
-
     ret = gc_remove_eligible_stats(ctx->messages, &stats);
     assert(ret >= 0);
     if (ret != 0) fprintf(stderr, "GC: Removed %d Statistics\n", ret);
-
-    // collect and remove messages
-    ret = gc_collect_eligible_msgs(ctx->messages, &messages);
+    ret = list_clean(&stats);
+    assert(ret == 0);
+    ret = list_destroy(&stats);
     assert(ret == 0);
 
+
+    // collect and remove messages
+    struct list messages;
+    ret = list_init(&messages);
+    assert(ret == 0);
+    ret = gc_collect_eligible_msgs(ctx->messages, &messages);
+    assert(ret == 0);
     ret = gc_remove_eligible_msgs(ctx->messages, &messages);
     assert(ret >= 0);
     if (ret != 0) fprintf(stderr, "GC: Removed %d Messages\n", ret);
+    ret = list_clean(&messages);
+    assert(ret == 0);
+    ret = list_destroy(&messages);
+    assert(ret == 0);
 
-    list_clean(&stats);
-    list_clean(&messages);
 
-    list_destroy(&stats);
-    list_destroy(&messages);
+    // collect and remove subscribers
+    struct list subscribers;
+    ret = list_init(&subscribers);
+    assert(ret == 0);
+    ret = gc_collect_eligible_subscribers(ctx->topics, ctx->messages,
+        &subscribers);
+    assert(ret == 0);
+    if (!list_empty(&subscribers)) {
+        ret = gc_remove_eligible_subscribers(ctx->topics, &subscribers);
+        assert(ret == 0);
+        ret = gc_destroy_subscribers(&subscribers);
+        assert(ret == 0);
+        printf("GC: Removed %d Subscribers\n", list_len(&subscribers));
+    }
+    ret = list_clean(&subscribers);
+    assert(ret == 0);
+    ret = list_destroy(&subscribers);
+    assert(ret == 0);
 
     return 0;
 }
@@ -412,4 +434,93 @@ int gc_remove_eligible_msgs(struct list *messages,
     assert(ret == 0);
 
     return nmsgs;
+}
+
+int gc_remove_eligible_subscribers(struct list *topics,
+                                   struct list *eligible) {
+    
+    int ret;
+
+    // acquire read lock on topics
+    ret = pthread_rwlock_rdlock(topics->listrwlock);
+    assert(ret == 0);
+
+    struct node *curTopic = topics->root;
+    while (curTopic != NULL) {
+        struct topic *topic = curTopic->entry;
+
+        // this topic contains subscribers to remove
+        int has_subs;
+
+        // acquire read lock on subscribers to check
+        ret = pthread_rwlock_rdlock(topic->subscribers->listrwlock);
+        assert(ret == 0);
+
+        struct node *curSub = topic->subscribers->root;
+        while (curSub != NULL) {
+            struct subscriber *sub = curSub->entry;
+
+            if (list_contains(eligible, sub)) {
+                has_subs = 1;
+                break;
+            } else {
+                has_subs = 0;
+            }
+
+            curSub = curSub->next;
+        }
+
+        // release read lock on subscribers
+        ret = pthread_rwlock_unlock(topic->subscribers->listrwlock);
+        assert(ret == 0);
+
+        // now we need the write lock to actually remove them
+        if (has_subs) {
+
+            // acquire write lock to remove subscribers
+            ret = pthread_rwlock_wrlock(topic->subscribers->listrwlock);
+            assert(ret == 0);
+
+            struct node *curSub = eligible->root;
+            while (curSub != NULL) {
+                struct subscriber *sub = curSub->entry;
+
+                ret = list_remove(topic->subscribers, sub);
+                // not found is ok, as we are trying all
+                assert(ret == 0 || ret == LIST_NOT_FOUND);
+
+                curSub = curSub->next;
+            }
+
+            // release write lock on subscribers
+            ret = pthread_rwlock_unlock(topic->subscribers->listrwlock);
+            assert(ret == 0);
+        }
+        
+        curTopic = curTopic->next;
+    }
+
+    // release read lock on topics
+    ret = pthread_rwlock_unlock(topics->listrwlock);
+    assert(ret == 0);
+
+    return 0;
+}
+
+int gc_destroy_subscribers(struct list *subscribers) {
+    struct node *curSub = subscribers->root;
+    while (curSub != NULL) {
+        struct subscriber *sub = curSub->entry;
+        struct client *client = sub->client;
+
+        client_destroy(client);
+        free(client);
+        sub->client = NULL;
+        free(sub->name);
+        sub->name = NULL;
+        
+        curSub = curSub->next;
+    }
+
+    return 0;
 }
