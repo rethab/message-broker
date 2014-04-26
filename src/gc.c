@@ -22,6 +22,37 @@ void *gc_main_loop(void *arg) {
 }
 
 int gc_run_gc(struct broker_context *ctx) {
+    /* the messages, statistics and subscribers are
+     * cleaned up in two steps: collect a list of
+     * eligible entries and then remove those
+     * that have been collected.
+     *
+     * note that there is no synchronization between the
+     * two and thus one could think that the list might
+     * change between collecting and removing (e.g.
+     * a message was considered eligible and in the second
+     * step it is no longer eligible). However, this case is not
+     * possible by design! The eligibility of any of the
+     * three types moves only from 'no' to 'yes', which means
+     * once something is considered eligible, there is
+     * no way back. reasoning:
+     * 1. message: a message's list of subscribers is copied
+     *             at creation time not additional subsribers
+     *             are added along the way. therefore, once
+     *             is is empty, it doesn't grow anymore.
+     * 2. msg_statistics:
+     *      I.   MAX_ATTEMPTS reached: the number of attempts
+     *              can only grow.
+     *      II.  client dead: there is no way back once the
+     *              client is dead
+     *      III. successfyl delivery: the message can only
+     *              be delivered once.
+     * 3. subscriber: a subscriber is eligible when it is
+     *                dead and no statistics point to it.
+     *                --> once a subscriber is considered dead,
+     *                it is not copied from the topic to the
+     *                message anymore.
+     * */
     int ret;
 
     struct list messages;
@@ -189,6 +220,116 @@ int gc_collect_eligible_msgs(struct list *messages,
     }
 
     // release read lock for messages list
+    ret = pthread_rwlock_unlock(messages->listrwlock);
+    assert(ret == 0);
+
+    return 0;
+}
+
+int gc_collect_eligible_subscribers(struct list *topics,
+                                    struct list *messages,
+                                    struct list *eligible) {
+    /* find dead subscribers via topics and then
+     * make sure each of those has no statistics */
+
+    int ret;
+
+    // acquire read lock on topic list
+    ret = pthread_rwlock_rdlock(topics->listrwlock);
+    assert(ret == 0);
+
+    struct node *curTopic = topics->root;
+    while (curTopic != NULL) {
+        struct topic *topic = curTopic->entry;
+        
+        // acquire read lock on subscribers list
+        ret = pthread_rwlock_rdlock(topic->subscribers->listrwlock);
+        assert(ret == 0);
+
+        struct node *curSub = topic->subscribers->root;
+        while (curSub != NULL) {
+            struct subscriber *sub = curSub->entry;
+            int dead;
+
+            // acquire dead flag lock
+            ret = pthread_mutex_lock(sub->client->deadmutex);
+            assert(ret == 0);
+
+            dead = sub->client->dead;           
+            
+            // release dead flag lock
+            ret = pthread_mutex_unlock(sub->client->deadmutex);
+            assert(ret == 0);
+
+            // list_contains: subscriber could be subscribed
+            // to other topic as well
+            if (dead && !list_contains(eligible, sub)) {
+                ret = list_add(eligible, sub);
+                assert(ret == 0);
+            }
+
+            curSub = curSub->next;
+        }
+
+        // release read lock on subscribers list
+        ret = pthread_rwlock_unlock(topic->subscribers->listrwlock);
+        assert(ret == 0);
+
+        curTopic = curTopic->next;
+    }
+
+    // release read lock on topic list
+    ret = pthread_rwlock_unlock(topics->listrwlock);
+    assert(ret == 0);
+
+    // early exit, if none are dead, there's
+    // nothing to verify
+    if (list_empty(eligible)) {
+        return 0;
+    }
+
+    // acquire read lock on messages
+    ret = pthread_rwlock_rdlock(messages->listrwlock);
+    assert(ret == 0);
+
+    struct node *curMsg = messages->root;
+    while (curMsg != NULL) {
+        struct message *msg = curMsg->entry;
+
+        // acquire read lock on statistics list
+        ret = pthread_rwlock_rdlock(msg->stats->listrwlock);
+        assert(ret == 0);
+
+        struct node *curStat = msg->stats->root;
+        while (curStat != NULL) {
+            struct msg_statistics *stat = curStat->entry;
+
+            struct node *curSub = eligible->root;
+            while (curSub != NULL) {
+                struct subscriber *sub = curSub->entry;
+
+                // there still is some statistic for
+                // this subscriber. gc will clean
+                // this up in the next pass
+                if (sub == stat->subscriber) {
+                    ret = list_remove(eligible, sub);   
+                    assert(ret == 0);
+                }
+                
+                curSub = curSub->next;
+            }
+
+            curStat = curStat->next;
+        }
+
+        // release read lock on statistics list
+        ret = pthread_rwlock_unlock(msg->stats->listrwlock);
+        assert(ret == 0);
+        
+        curMsg = curMsg->next;
+    }
+
+    // release read lock on messages
     ret = pthread_rwlock_unlock(messages->listrwlock);
     assert(ret == 0);
 

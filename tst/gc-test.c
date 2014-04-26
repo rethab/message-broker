@@ -178,6 +178,71 @@ void test_gc_collect_eligible_msgs() {
     CU_ASSERT_PTR_NULL_FATAL(eligible.root->next);
 }
 
+void test_gc_collect_eligible_subscribers() {
+    int ret;
+    struct list topics;
+    struct list messages;
+    struct list eligible;
+    struct topic topic;
+    struct message msg1;
+    struct subscriber sub1;
+    struct subscriber sub2;
+    struct subscriber sub3;
+    struct client client1;
+    struct client client2;
+    struct client client3;
+    struct msg_statistics stat1;
+
+    list_init(&topics);
+    list_init(&messages);
+    list_init(&eligible);
+    client_init(&client1);
+    client_init(&client2);
+    client_init(&client3);
+    message_init(&msg1);
+    topic_init(&topic);
+
+    list_add(msg1.stats, &stat1);
+    list_add(&topics, &topic);
+
+    list_add(topic.subscribers, &sub1);
+    stat1.subscriber = &sub1;
+    sub1.name = "sub1";
+    sub1.client = &client1;
+    client1.dead = 1;
+    list_add(topic.subscribers, &sub2);
+    sub2.name = "sub2";
+    sub2.client = &client2;
+    client2.dead = 1;
+    list_add(topic.subscribers, &sub3);
+    sub3.name = "sub3";
+    sub3.client = &client3;
+    client3.dead = 0;
+
+    list_add(&messages, &msg1);
+
+    // sub1 has statistics and is dead -> not eligible
+    // sub2 has no statistics and is dead -> eligible
+    // sub2 has no statistics and is alive -> not eligible
+
+    ret = gc_collect_eligible_subscribers(&topics, &messages, &eligible);
+    CU_ASSERT_EQUAL_FATAL(0, ret);
+
+    CU_ASSERT_PTR_NOT_NULL_FATAL(eligible.root);
+    CU_ASSERT_EQUAL_FATAL(&sub2, eligible.root->entry);
+    CU_ASSERT_PTR_NULL_FATAL(eligible.root->next);
+
+    client_destroy(&client1);
+    client_destroy(&client2);
+    client_destroy(&client3);
+    list_clean(&messages);
+    list_clean(&topics);
+    list_clean(&eligible);
+    list_destroy(&messages);
+    list_destroy(&topics);
+    list_destroy(&eligible);
+}
+
 void test_gc_remove_eligible_msgs() {
     int ret;
     struct list messages;
@@ -502,6 +567,8 @@ void gc_test_suite() {
         test_gc_collect_eligible_stats); 
     CU_add_test(gcSuite, "test_gc_collect_eligible_msgs",
         test_gc_collect_eligible_msgs); 
+    CU_add_test(gcSuite, "test_gc_collect_eligible_subscribers",
+        test_gc_collect_eligible_subscribers); 
     CU_add_test(gcSuite, "test_gc_remove_eligible_msgs",
         test_gc_remove_eligible_msgs); 
     CU_add_test(gcSuite, "test_gc_remove_eligible_msgs_twice",

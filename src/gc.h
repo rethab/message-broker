@@ -3,6 +3,7 @@
 
 #include "distributor.h"
 #include "broker.h"
+#include "list.h"
 
 /* time to wait for until another 
  * attempt to clean all messages and
@@ -11,11 +12,16 @@
 #define GC_PASS_TIMEOUT 1
 
 /* checks whether a statistics is eligible to
- * be garbage collected */
+ * be garbage collected: client is dead, too many
+ * attempts to deliver the message have already
+ * been made or the message has successfully
+ * been delivered. */
 int gc_eligible_stat(struct msg_statistics *stat);
 
 /* checks whether a message is eligible to
- * be garbage collected */
+ * be garbage collected: the message has 
+ * no statistics (those would be removed
+ * beforehand) */
 int gc_eligible_msg(struct message *msg);
 
 /* collects all statistics to be garbage collected
@@ -27,6 +33,14 @@ int gc_collect_eligible_stats(struct list *messages,
  * in the second parameter */
 int gc_collect_eligible_msgs(struct list *messages,
                              struct list *eligible);
+
+/* collects the subscribers eligible for garbage
+ * collection in the eligible list (3rd param). a
+ * client is eligible if it is dead and no statistics
+ * point to it */
+int gc_collect_eligible_subscribers(struct list *topics,
+                                    struct list *messages,
+                                    struct list *eligible);
 
 /* removes all statstics passed in the second
  * parameter from the messages list. returns
