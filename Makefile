@@ -17,6 +17,7 @@ client: stomp
 test: CFLAGS += $(TEST_CFLAGS)
 test: clean topic stomp socket broker distributor gc
 	gcc $(CFLAGS) -o tst/main.o tst/main.c src/topic.o src/stomp.o src/socket.o src/broker.o src/distributor.o src/gc.o src/list.o
+	tst/main.o
 
 cover: test
 	tst/main.o
