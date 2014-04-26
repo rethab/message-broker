@@ -8,7 +8,7 @@ all: server client
 
 server: CFLAGS += $(PROD_CFLAGS)
 server: topic stomp broker socket distributor gc
-	gcc $(CFLAGS) -o src/server src/server.c src/stomp.o src/topic.o src/broker.o src/socket.o src/distributor.o src/gc.o
+	gcc $(CFLAGS) -o src/server src/server.c src/stomp.o src/topic.o src/broker.o src/socket.o src/distributor.o src/gc.o src/list.o
 
 client: CFLAGS += $(PROD_CFLAGS)
 client: stomp
@@ -16,7 +16,7 @@ client: stomp
 
 test: CFLAGS += $(TEST_CFLAGS)
 test: clean topic stomp socket broker distributor gc
-	gcc $(CFLAGS) -o tst/main.o tst/main.c src/topic.o src/stomp.o src/socket.o src/broker.o src/distributor.o src/gc.o
+	gcc $(CFLAGS) -o tst/main.o tst/main.c src/topic.o src/stomp.o src/socket.o src/broker.o src/distributor.o src/gc.o src/list.o
 
 cover: test
 	tst/main.o
@@ -24,7 +24,7 @@ cover: test
 	lcov --remove coverage.info "/usr*" -o coverage.info
 	genhtml coverage.info -o coverage
 
-topic: src/topic.c
+topic: list src/topic.c
 	gcc -c $(CFLAGS) -o src/topic.o src/topic.c
 
 stomp: src/stomp.c
@@ -41,6 +41,9 @@ distributor: src/distributor.c
 
 gc: src/gc.c
 	gcc -c $(CFLAGS) -o src/gc.o src/gc.c
+
+list: src/list.c
+	gcc -c $(CFLAGS) -o src/list.o src/list.c
 
 clean:
 	rm -fv {src,tst}/*.o
