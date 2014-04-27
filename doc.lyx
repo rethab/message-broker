@@ -1,0 +1,691 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Message Broker
+\begin_inset Newline newline
+\end_inset
+
+
+\size large
+Seminar Concurrent Programming in C
+\begin_inset Newline newline
+\end_inset
+
+an der ZHAW am Standort Zürich
+\end_layout
+
+\begin_layout Author
+Reto Hablützel
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage pagebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Einleitung
+\end_layout
+
+\begin_layout Standard
+Ein Message Broker ist eine zentrale Kommunikatinsschnittstelle für mehrere
+ Programme.
+ Sie ermöglicht es, dass verschiedenste Programme miteinander kommunizieren
+ können, indem Nachrichten aneinander versendet werden.
+ Ein Message Broker bietet typischerweise verschiedene Protokolle zur Kommunikat
+ion an.
+\end_layout
+
+\begin_layout Standard
+stomp erwähnen
+\end_layout
+
+\begin_layout Section
+Funktionalität
+\end_layout
+
+\begin_layout Standard
+Dieses Kapitel erläutert die Funktionalitäten, die im Message Broker im
+ Rahmen dieses Seminars umgesetzt wurden.
+\end_layout
+
+\begin_layout Subsection
+Verbindungsauf- und abbau
+\end_layout
+
+\begin_layout Standard
+Jede Verbindung zwischen einem Client und dem Message Broker beginnt mit
+ einem kurzen Handshake.
+ Der Client teilt dem Message Broker seinen Namen mit und der Message Broker
+ bestätigt den Empfang.
+ Sobald der Client die Kommunikation beenden will, teilt er dies dem Message
+ Broker mit einer Disconnect Nachricht mit und kriegt wiederum eine Bestätigung.
+\end_layout
+
+\begin_layout Subsection
+Nachrichten empfangen
+\end_layout
+
+\begin_layout Standard
+Ein verbundener Client kann einen Topic abonnieren und kriegt so vom Message
+ Broker sämtliche Nachrichten zu diesem Topic zugestellt.
+ Topics werden dynamisch erstellt, sobald sicher der erste Client dafür
+ interessiert.
+ Ein Client, der Nachrichten von einem Topic abonniert hat, wird Subscriber
+ genannt.
+\end_layout
+
+\begin_layout Subsection
+Nachrichten senden
+\end_layout
+
+\begin_layout Standard
+Ein verbundener Client kann Nachrichten zu einem bestimmten Topic an den
+ Message Broker senden.
+ Ein solcher Client wird als Publisher bezeichnet.
+\end_layout
+
+\begin_layout Section
+Konzept
+\end_layout
+
+\begin_layout Subsection
+Protokoll
+\end_layout
+
+\begin_layout Standard
+Für die Umsetzung wurde eine abgespeckte Version vom STOMP
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://stomp.github.io/
+\end_layout
+
+\end_inset
+
+ Protokoll implementiert.
+ Die implementierten Kommandos werden unter aufgelistet.
+ Auf sämtliche Kommandos vom Client kann der Server mit ERROR antworten,
+ falls etwas schief gelaufen ist.
+ Jedes Kommando hat die folgende Struktur:
+\end_layout
+
+\begin_layout Standard
+Auf der ersten Zeile steht der Name des Kommandos in Grossbuchstaben.
+ Auf folgenden Zeilen stehen durch Doppelpunkt separierte Key-Value Paare,
+ welche Header Werte darstellen.
+ Nach den Header Werten folgt der Content, welcher durch eine Leerzeile
+ vom Header getrennt ist.
+ Das Ende eines Kommandos markiert wiederum eine Leerzeile gefolgt vom Null-Byte
+ (hier ^@):
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+COMMAND
+\end_layout
+
+\begin_layout Plain Layout
+
+key: value
+\end_layout
+
+\begin_layout Plain Layout
+
+key: value
+\end_layout
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+Content
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+^@
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Struktur eines Kommandos
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+CONNECT
+\end_layout
+
+\begin_layout Standard
+Wird vom Client an den Message Broker zum Beginn der Verbindung gesendet.
+ Hat einen zwingenden Header 'login', welcher den Client identifiziert.
+ Hat keinen Content.
+ Sobald der Message Broker das Kommando den Client aufgenommen hat, sendet
+ er zur Bestätigung CONNECTED.
+\end_layout
+
+\begin_layout Subsubsection
+CONNECTED
+\end_layout
+
+\begin_layout Standard
+Wird vom Message Broker als Antwort auf das CONNECT Kommando versendet falls
+ die Verbindung erfolgreich erstellt werden konnte.
+ Hat weder Header noch Content.
+\end_layout
+
+\begin_layout Subsubsection
+ERROR
+\end_layout
+
+\begin_layout Standard
+Wird vom Message Broker in verschiedenen Szenarien an den Client gesendet
+ um einen Fehler mitzuteilen.
+ Hat einen zwingenden Header 'message', der die Fehlermeldung enthält und
+ keinen Content.
+\end_layout
+
+\begin_layout Subsubsection
+SEND
+\end_layout
+
+\begin_layout Standard
+Wird von einem Client an den Message Broker gesendet um einen Nachricht
+ zuzustellen.
+ Hat einen zwingenden Header 'topic', der den Topic identifiziert, an den
+ die Nachricht gesendet wird.
+ Im Content steht der eigentliche Inhalt der Nachricht.
+\end_layout
+
+\begin_layout Subsubsection
+SUBSCRIBE
+\end_layout
+
+\begin_layout Standard
+Wird von einem Client an den Message Broker gesendet um einen Topic zu abonniere
+n.
+ Hat einen zwingenden Header 'destination', welcher den Topic identifiziert.
+ Hat keinen Content.
+\end_layout
+
+\begin_layout Subsubsection
+MESSAGE
+\end_layout
+
+\begin_layout Standard
+Wird vom Message Broker an den Client gesendet um eine Nachricht zuzustellen.
+ Hat einen zwingenden Header 'destination', der den Topic identifiziert.
+ Die Nachricht ist im Content.
+\end_layout
+
+\begin_layout Subsubsection
+DISCONNECT
+\end_layout
+
+\begin_layout Standard
+Wird vom Client an den Message Broker gesendet um die Verbindung zu beenden.
+ Hat weder Header noch Content.
+\end_layout
+
+\begin_layout Subsubsection
+RECEIPT
+\end_layout
+
+\begin_layout Standard
+Wird vom Message Broker an den Client gesendet, sobald der Message Broker
+ den DISCONNECT akzeptiert hat.
+ Hat weder Header noch Content.
+\end_layout
+
+\begin_layout Subsection
+Speicherstruktur
+\end_layout
+
+\begin_layout Standard
+Auf dem Server existieren zwei globale Listen: Die eine enthält alle Topics
+ verknüpft mit einer Liste von Subscribern zum jeweiligen Topic.
+ Die zweite Liste enthält alle Messages, die vom Message Broker empfangen
+ wurden.
+ Zudem enthält jede Nachricht eine Liste von Statistiken.
+ Eine Statstik ist eine Tripel aus Subscriber, Anzahl versuchter Zustellungen
+ und einen Timestamp der letzten erfolglosen Zustellung.
+ Diese wird verwendet um zu bestimmen, welche Subscriber die Nachricht erhalten
+ haben und ob ein erneuter Versuch der Zustellung gemacht werden soll.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+Topics:
+\end_layout
+
+\begin_layout Plain Layout
+
+  - topic1
+\end_layout
+
+\begin_layout Plain Layout
+
+      - subscriber1
+\end_layout
+
+\begin_layout Plain Layout
+
+      - subscriber2
+\end_layout
+
+\begin_layout Plain Layout
+
+  - topic2
+\end_layout
+
+\begin_layout Plain Layout
+
+      - subscriber1
+\end_layout
+
+\begin_layout Plain Layout
+
+      - subscriber3
+\end_layout
+
+\begin_layout Plain Layout
+
+      ..
+\end_layout
+
+\begin_layout Plain Layout
+
+  ..
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+Messages:
+\end_layout
+
+\begin_layout Plain Layout
+
+  - message1
+\end_layout
+
+\begin_layout Plain Layout
+
+      - topic
+\end_layout
+
+\begin_layout Plain Layout
+
+      - content
+\end_layout
+
+\begin_layout Plain Layout
+
+      - statistic1
+\end_layout
+
+\begin_layout Plain Layout
+
+          - last fail
+\end_layout
+
+\begin_layout Plain Layout
+
+          - nattempts
+\end_layout
+
+\begin_layout Plain Layout
+
+          - subscriber1
+\end_layout
+
+\begin_layout Plain Layout
+
+      - statistic2
+\end_layout
+
+\begin_layout Plain Layout
+
+          - last fail
+\end_layout
+
+\begin_layout Plain Layout
+
+          - nattempts
+\end_layout
+
+\begin_layout Plain Layout
+
+          - subscriber2
+\end_layout
+
+\begin_layout Plain Layout
+
+  - message2
+\end_layout
+
+\begin_layout Plain Layout
+
+      ..
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Speicherstruktur
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Einfügen einer neuen Nachricht
+\end_layout
+
+\begin_layout Standard
+Wenn ein Client eine Nachricht an den Message Broker sendet, kopiert er
+ die Liste von Subscribern von dem Topic, an den die Nachricht versendet
+ wurde.
+ Dann wird ein neuer Eintrag in der Liste der Nachrichten erstellt und die
+ Subscriber werden in eine Liste von Statistiken überführt.
+\end_layout
+
+\begin_layout Subsection
+Komponenten
+\end_layout
+
+\begin_layout Subsubsection
+Broker
+\end_layout
+
+\begin_layout Standard
+Pro verbundenem Client existiert ein Thread, der den Broker repräsentiert.
+ Der Broker hält eine TCP Verbindung aufrecht und ist stets bereit, Kommandos
+ zu lesen.
+ Der Broker fügt den Client zur Liste der Subscriber, wenn er sich für einen
+ Topic interessiert und nimmt eine Nachricht entgegen, wenn er eine sendet,
+ und reiht diese in die Liste der Nachrichten.
+\end_layout
+
+\begin_layout Subsubsection
+Distributor
+\end_layout
+
+\begin_layout Standard
+Der Distributor prüft ständig die Liste von Messages nach Nachrichten, die
+ zugestellt werden sollen.
+ Jedes Mal, wenn eine Nachricht erfolgreich zugestellt wurde, wird den Zähler
+ 'nattempts' um eins erhöht.
+ Falls die Zustellung fehlschlägt, wird der Timestamp 'last fail' gesetzt.
+ Mit diesem Timestamp kann der Distributor auch feststellen, ob er bereits
+ einen erneuten Versuch zur unternehmen soll.
+\end_layout
+
+\begin_layout Subsubsection
+Garbage Collector
+\end_layout
+
+\begin_layout Standard
+Der Garbage Collector räumt Statistiken, Nachrichten und Subscriber auf.
+ Mittels bestimmter Regeln entscheidet der Garbage Collector, ob ein Eintrag
+ in der Liste der Statistiken zu einer Nachricht gelöscht werden kann (z.B.
+ Nachricht wurde erfolgreich zugestellt oder Subscriber hat die Verbindung
+ beendet).
+ Sobald eine Nachricht keine Statistiken mehr hat, kann die gesamte Nachricht
+ abgeräumt werden und aus der Liste der Messages gelöscht werden.
+ Wenn ein Subscriber in keiner der Liste der Statistiken mehr auftaucht,
+ kann auch er gelöscht werden.
+\end_layout
+
+\begin_layout Section
+Implementation
+\end_layout
+
+\begin_layout Section
+Verwendung
+\end_layout
+
+\begin_layout Section
+Rückblick
+\end_layout
+
+\begin_layout Section
+Fazit
+\end_layout
+
+\begin_layout Section
+Anhang
+\end_layout
+
+\begin_layout Subsection
+Begriffe
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="2">
+<features rotate="0" tabularvalignment="middle">
+<column alignment="left" valignment="top" width="0pt">
+<column alignment="left" valignment="top" width="70col%">
+<row>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Begriff
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Erklärung
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Topic
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Nachrichten werden in Themen gruppiert.
+ Clients abonnieren Themen und kriegen so die Nachrichten zugestellt, die
+ an dieses Thema gesendet werden.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Publisher
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ein Client, der Nachrichten sendet
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Subscriber
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ein Client, der an Nachrichten von einem Topic interessiert ist
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+STOMP
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Simple Text Oriented Messaging Protocol
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
