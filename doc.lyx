@@ -235,7 +235,6 @@ Content
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Struktur eines Kommandos
 \end_layout
 
@@ -475,7 +474,6 @@ Messages:
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Speicherstruktur
 \end_layout
 
@@ -552,8 +550,414 @@ Der Garbage Collector räumt Statistiken, Nachrichten und Subscriber auf.
 Implementation
 \end_layout
 
+\begin_layout Subsection
+Locking
+\end_layout
+
+\begin_layout Standard
+Damit das Programm auch mit mehreren interagierenden Threads stets in einem
+ konsistenten Zustand bleibt, wurden die beiden globalen Listen mit Locks
+ geschützt.
+ Die folgenden Tabellen zeigt links die Resourcen, die geschützt werden
+ müssen und in den Spalten 2-n die Aktionen, die diese Resourcen verändern.
+ Mit R, W und M wird dann angedeutet, welcher Lock für eine bestimmte Aktion
+ gehaltet werden muss.
+\end_layout
+
+\begin_layout Itemize
+R: Es wurde ein Read Write Lock verwendet und dessen Read Lock muss gehalten
+ werden
+\end_layout
+
+\begin_layout Itemize
+W: Es wurde ein Read Write Lock verwendet und dessen Write Lock muss gehalten
+ werden
+\end_layout
+
+\begin_layout Itemize
+M: Es wurde eine Mutext verwendet, welche gehalten werden muss
+\end_layout
+
+\begin_layout Subsubsection
+Topics
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="3" columns="4">
+<features rotate="0" tabularvalignment="middle">
+<column alignment="left" valignment="top">
+<column alignment="left" valignment="top">
+<column alignment="left" valignment="top">
+<column alignment="left" valignment="top">
+<row>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Resource
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Topic erstellen
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Subscriber hinzufügen
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Subscriber entfernen
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Liste von Topics
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+W
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+R
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+R
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+Liste von Subscriber
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+W
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+W
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Messages
+\end_layout
+
+\begin_layout Subsubsection
+Client
+\end_layout
+
 \begin_layout Section
 Verwendung
+\end_layout
+
+\begin_layout Standard
+Dieses Kapitel beschreibt die Anwendung des Programms.
+ Der Hauptteil ist der Message Broker selbst, welcher grundsätzlich durch
+ das oben beschriebene Protokoll verwendet werden kann.
+ Im Rahmen dieser Seminararbeit wurde jedoch auch ein Testclient implementiert,
+ der die Funktionalität demonstriert.
+\end_layout
+
+\begin_layout Subsection
+Kompilieren und Tests ausführen
+\end_layout
+
+\begin_layout Standard
+Als Buildsystem wurde make verwendet und die Tests basieren auf cunit.
+ Letzteres muss installiert sein, um die Tests auszuführen.
+\end_layout
+
+\begin_layout Standard
+Um den Code für die Tests zu kompilieren muss folgender Befehl ausgeführt
+ werden.
+ Dieser wird die Tests auch direkt ausführen und einen Report ausgeben.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+message-broker$ make test
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Tests kompilieren und ausführen
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Der Produktivecode wird mit folgendem Befehl erzeugt.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+message-broker$ make
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Produktivecode kompilieren
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Dies erstellt die beiden Binaries run und test im Hauptverzeichnis.
+\end_layout
+
+\begin_layout Subsection
+Message Broker starten
+\end_layout
+
+\begin_layout Standard
+Mit folgendem Befehl kann der Message Broker auf dem Standard Port gestartet
+ werden.
+ Welcher das ist, wird auf der Konsole ausgegeben.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+message-broker$ ./run
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Message Broker auf Standard Port
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Falls ein anderer Port verwendet werden soll, kann dieser als Argument mitgegebe
+n werden.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+message-broker$ ./run 44554
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Message Broker mit bestimmten Port
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Testclient starten
+\end_layout
+
+\begin_layout Standard
+Auch der Testclient kann ohne Argumente aufgerufen werden und wird sich
+ dann mit dem Standard Port vom Message Broker verbinden.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+message-broker$ ./test
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Testclient mit Standard Argumenten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Zusätzlich bietet der Testclient einige Argumente um das Verhalten zu Steuern.
+ Wichtig ist, dass alle Argumente in dieser Reihenfolge angegeben werden
+ müssen.
+\end_layout
+
+\begin_layout Itemize
+hostname: Der Hostname vom Message Broker
+\end_layout
+
+\begin_layout Itemize
+port: Der Port vom Message Broker
+\end_layout
+
+\begin_layout Itemize
+name: Der Name, der für das Login verwendet werden soll.
+\end_layout
+
+\begin_layout Itemize
+nmsgs: Die Anzahl Nachrichten, die an den Broker versendet werden sollen.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+message-broker$ ./test localhost 44554 hmuster 33
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Testclient mit bestimmten Argumenten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
