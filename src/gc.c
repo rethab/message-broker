@@ -225,18 +225,11 @@ int gc_collect_eligible_msgs(struct list *messages,
 
         struct message *msg = curMsg->entry;
 
-        // acquire read lock for stats list
-        ret = pthread_rwlock_rdlock(msg->stats->listrwlock);
-        assert(ret == 0);
-
+        // gc_eligible_msg does the locking
         if (gc_eligible_msg(msg)) {
             ret = list_add(eligible, msg);   
             assert(ret == 0);
         }
-
-        // release read lock for stats list
-        ret = pthread_rwlock_unlock(msg->stats->listrwlock);
-        assert(ret == 0);
 
         curMsg = curMsg->next;
     }
