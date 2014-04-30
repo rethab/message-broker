@@ -519,15 +519,6 @@ Wenn ein Client eine Nachricht an den Message Broker sendet, kopiert er
 Komponenten
 \end_layout
 
-\begin_layout Standard
-\begin_inset Graphics
-	filename docs/components.png
-
-\end_inset
-
-
-\end_layout
-
 \begin_layout Subsubsection
 Handler
 \end_layout
@@ -580,6 +571,16 @@ Der Garbage Collector räumt Statistiken, Nachrichten und Subscriber auf.
  kann auch er gelöscht werden.
 \end_layout
 
+\begin_layout Standard
+\begin_inset Graphics
+	filename components.png
+	width 50page%
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 Implementation
 \end_layout
@@ -609,7 +610,7 @@ W: Es wurde ein Read Write Lock verwendet und dessen Write Lock muss gehalten
 \end_layout
 
 \begin_layout Itemize
-M: Es wurde eine Mutext verwendet, welche gehalten werden muss
+M: Es wurde eine Mutex verwendet, welche gehalten werden muss
 \end_layout
 
 \begin_layout Standard
@@ -675,7 +676,7 @@ Nachricht hinzufügen
 \begin_inset Text
 
 \begin_layout Plain Layout
-Liste von Topics
+Topics Liste
 \end_layout
 
 \end_inset
@@ -720,7 +721,7 @@ R
 \begin_inset space ~
 \end_inset
 
-Liste von Subscriber
+Subscriber Liste
 \end_layout
 
 \end_inset
@@ -796,7 +797,7 @@ R
 \begin_inset Text
 
 \begin_layout Plain Layout
-Liste von Messages
+Messages Liste
 \end_layout
 
 \end_inset
@@ -841,7 +842,7 @@ W
 \begin_inset space ~
 \end_inset
 
-Liste von Statistiken
+Statistik Liste
 \end_layout
 
 \end_inset
@@ -943,13 +944,13 @@ Garbage Collector
 <lyxtabular version="3" rows="7" columns="8">
 <features rotate="0" tabularvalignment="middle">
 <column alignment="left" valignment="top">
-<column alignment="left" valignment="top">
-<column alignment="left" valignment="top">
-<column alignment="left" valignment="top">
-<column alignment="left" valignment="top">
-<column alignment="left" valignment="top">
-<column alignment="left" valignment="top">
-<column alignment="left" valignment="top">
+<column alignment="left" valignment="top" width="5page%">
+<column alignment="left" valignment="top" width="7page%">
+<column alignment="left" valignment="top" width="7page%">
+<column alignment="left" valignment="top" width="5page%">
+<column alignment="left" valignment="top" width="5page%">
+<column alignment="left" valignment="top" width="6page%">
+<column alignment="left" valignment="top" width="6page%">
 <row>
 <cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
@@ -987,7 +988,7 @@ Subscriber entfernen
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -996,7 +997,7 @@ Statistik löschen prüfen
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1005,7 +1006,7 @@ Statistik löschen
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1014,7 +1015,7 @@ Nachricht löschen prüfen
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1029,7 +1030,7 @@ Nachricht löschen
 \begin_inset Text
 
 \begin_layout Plain Layout
-Liste von Topics
+Topics Liste
 \end_layout
 
 \end_inset
@@ -1047,18 +1048,7 @@ W
 \begin_inset Text
 
 \begin_layout Plain Layout
-R / W 
-\begin_inset Foot
-status open
-
-\begin_layout Plain Layout
-Prueft zuerst, ob Topic existiert mit Read Lock.
- Falls nein, prueft er nochmals mit dem Write Lock und fügt den Topic hinzu
-\end_layout
-
-\end_inset
-
-
+R / W *
 \end_layout
 
 \end_inset
@@ -1072,7 +1062,7 @@ R
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1081,7 +1071,7 @@ R
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1090,7 +1080,7 @@ R
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1099,7 +1089,7 @@ R
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1121,7 +1111,7 @@ R
 \begin_inset space ~
 \end_inset
 
-Liste von Subscriber
+Subscriber Liste
 \end_layout
 
 \end_inset
@@ -1153,7 +1143,7 @@ W
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1162,7 +1152,7 @@ W
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1171,7 +1161,7 @@ W
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1180,81 +1170,7 @@ W
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\end_inset
-</cell>
-</row>
-<row>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
-\begin_inset Text
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\end_inset
-</cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1269,12 +1185,12 @@ W
 \begin_inset Text
 
 \begin_layout Plain Layout
-Liste von Messages
+
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1283,7 +1199,7 @@ Liste von Messages
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1292,7 +1208,7 @@ Liste von Messages
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1301,7 +1217,81 @@ Liste von Messages
 
 \end_inset
 </cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
 <cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Messages Liste
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1310,7 +1300,7 @@ R
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1319,7 +1309,7 @@ R
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1328,7 +1318,7 @@ R
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1350,12 +1340,12 @@ W
 \begin_inset space ~
 \end_inset
 
-Liste von Statistiken
+Statistik Liste
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1364,7 +1354,7 @@ Liste von Statistiken
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1373,7 +1363,7 @@ Liste von Statistiken
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1382,7 +1372,7 @@ Liste von Statistiken
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1391,7 +1381,7 @@ R
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1400,7 +1390,7 @@ W
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1409,7 +1399,7 @@ R
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1444,7 +1434,7 @@ Statistik
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1453,7 +1443,7 @@ Statistik
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1462,7 +1452,7 @@ Statistik
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1471,7 +1461,7 @@ Statistik
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1480,7 +1470,7 @@ R
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1489,7 +1479,7 @@ R
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1498,7 +1488,7 @@ R
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1513,6 +1503,17 @@ R
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+* Wenn ein Subscriber hinzugefügt werden soll, wird zuerst mit einem Read
+ Lock auf der Liste der Topics geprüft, ob der Topic bereits existiert.
+ Wenn der Topic noch nicht existiert, wird der Write Lock auf der Liste
+ der Topics angefordert und die Existenz wird nochmal geprüft.
+ Falls er noch immer nicht existiert, wird der Topic angelegt.
 \end_layout
 
 \begin_layout Subsubsection
@@ -1560,7 +1561,7 @@ Nachricht zustellen
 \begin_inset Text
 
 \begin_layout Plain Layout
-Liste von Messages
+Messages Liste
 \end_layout
 
 \end_inset
@@ -1596,7 +1597,7 @@ R
 \begin_inset space ~
 \end_inset
 
-Liste von Statistiken
+Statistik Liste
 \end_layout
 
 \end_inset
@@ -1686,6 +1687,65 @@ Nebste den diversen Locks für die beiden Listen, existieren noch drei Mutexe
 \end_layout
 
 \begin_layout Subsection
+Dateien
+\end_layout
+
+\begin_layout Standard
+Sämtlicher Produktivcode ist im Verzeichnis src.
+ Es folgt eine Auflistung der Dateien und kurze Beschreibung von deren Inhalt.
+\end_layout
+
+\begin_layout Itemize
+server.c: Beinhaltet main-Funktion vom Message Broker.
+ Hier werden alle Komponenten gestartet und es wird auf neue Clients gewartet.
+\end_layout
+
+\begin_layout Itemize
+broker.c/broker.h: Funktionalität vom Broker.
+ Die Funktion handle_client ist Einstiegspunkt für den Broker pro Client.
+\end_layout
+
+\begin_layout Itemize
+distributor.c/distributor.h: Funktionalität vom Distributor.
+ Die Funktion distributor_main_loop wird dem Distributor - Thread als Startfunkt
+ion übergeben und versucht mittels der anderen Funktionen in der Datei die
+ Nachrichten zuzustellen.
+\end_layout
+
+\begin_layout Itemize
+gc.c/gc.h: Funktionalität vom Garbage Collector.
+ Die Funktion gc_main_loop wird dem Garbage Collector - Thread als Startfunktion
+ übergeben und führt die Garbage Collector Funktion kontinuierlich aus.
+\end_layout
+
+\begin_layout Itemize
+list.c/list.h: Eine Implementation einer verketteten Liste und einiger Operationen.
+ Diese Liste wird überall verwendet (z.B.
+ Liste von Topics).
+\end_layout
+
+\begin_layout Itemize
+socket.c/socket.h: Ein High-Level Interface für Sockets.
+ Im Gegensatz zu herkömmlichen Funktionen, die mit Byte-Array Buffer über
+ einen Socket Daten versenden, kann mit diesen Funktionen komfortabel ein
+ ganzes STOMP - Kommando über den Socket versendet bzw.
+ empfangen werden.
+\end_layout
+
+\begin_layout Itemize
+stomp.c/stomp.h: Beinhaltet Funktionen zum Parsen von Char - Arrays in ein
+ STOMP - Kommando (struct) und wieder zurück.
+ Diese Funktionen werden verwendet, um Kommandos über den Socket zu versenden.
+\end_layout
+
+\begin_layout Itemize
+topic.c/topic.h: Beinhaltet die zentralen Strukturen und Funktionen zum operieren
+ mit den beiden zentralen Listen von Messages und Topics.
+ So gibt es zum Beispiel eine Funktion um einen Subscriber einem Topic hinzuzufü
+gen.
+\end_layout
+
+\begin_layout Subsection
 Testing
 \end_layout
 
@@ -1693,6 +1753,17 @@ Testing
 Das ganze Programm wurde testgetrieben entwickelt und mit den Coverage Tools
  von GCC wurde kontinuierlich die Testabdeckung überwacht.
  Somit konnte schlussendlich eine hohe Abdeckung von über 97% erreicht werden.
+ Als Test-Framework wurde cunit
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://www.cunit.sourceforge.net
+\end_layout
+
+\end_inset
+
+ verwendet.
 \end_layout
 
 \begin_layout Standard
@@ -1716,7 +1787,6 @@ Summary coverage rate:
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Testabdeckung
 \end_layout
 
