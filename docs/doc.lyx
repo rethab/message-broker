@@ -115,24 +115,52 @@ Einleitung
 
 \begin_layout Standard
 Ein Message Broker ist eine zentrale Kommunikatinsschnittstelle für mehrere
- Programme.
- Sie ermöglicht es, dass verschiedenste Programme miteinander kommunizieren
- können, indem Nachrichten aneinander versendet werden.
- Ein Message Broker bietet typischerweise verschiedene Protokolle zur Kommunikat
-ion an.
+ Programme die in verschiedenen Programmiersprachen implementiert sein können.
+ Nebst der Möglichkeit heterogene Systeme zu verbinden, kann jedoch durch
+ einen Message Broker auch eine verteilte Architektur realisiert werden
+ indem jeder Client einen Teil der Funktionalität übernimmt.
 \end_layout
 
 \begin_layout Standard
-stomp erwähnen
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Damit verschiedenste Programme miteinander kommunizieren können, bieten
+ Message Broker typischerweise Schnittestellen mit verschiedenen Protokollen.
+ Eines davon ist STOMP, welches sehr einfach gehalten und spezifisch für
+ dynamische Programmiersprachen entwickelt wurde.Im Rahmen dieses Seminars
+ habe ich mich deshalb für die Implementation von einem Message Broker entschied
+en.
+ Da das Kernthema Concurrency ist und ich nicht zu viel Zeit mit dem Protokoll
+ verschwenden wollte, habe ich eine abgespeckte Version von STOMP als Protokoll
+ implementiert.
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Auf den Umfang der Funktionalität wird im Kapitel 2 näher eingegangen.
+ Das Kapitel 3 beschreibt im wesentlichen das Subset von STOMP, das implementier
+t wurde, die verschiedenen Komponenten, die im Message Broker existieren,
+ sowie die Speicherstruktur.
+ Im Kapitel 4 finden sich einige Details zur Implementation (insbesondere
+ Locking) gefolgt vom Kapitel 5, welches die Verwendung vom Message Broker
+ erklärt.
+ Abgeschlossen wird die Dokumentation mit dem Kapitel 6 und einem persönlichen
+ Rückblick.
 \end_layout
 
 \begin_layout Section
 Funktionalität
-\end_layout
-
-\begin_layout Standard
-Dieses Kapitel erläutert die Funktionalitäten, die im Message Broker im
- Rahmen dieses Seminars umgesetzt wurden.
 \end_layout
 
 \begin_layout Subsection
@@ -2033,8 +2061,137 @@ Testclient mit bestimmten Argumenten
 Rückblick
 \end_layout
 
-\begin_layout Section
+\begin_layout Subsection
+Test Driven Development
+\end_layout
+
+\begin_layout Standard
+Ich wollte dieses Projekt verwenden, um die testgetriebene Entwicklung auszuprob
+ieren.
+ Deshalb habe ich schon von beginn an immer zuerst Unit - Tests geschrieben.
+ Zugegebenermassen habe ich jedoch bei den ersten Funktionen (vor allem
+ stomp.c) zuerst die Header-Datei geschrieben und dann dagegen getestet.
+ Als ich bei späteren Dateien (z.B.
+ distributor.c) jedoch überhaupt kein Interface hatte, gegen das ich testen
+ konnte, habe ich gemerkt, wie sich auch die Signatur der Methoden verbessert
+ hat.
+ So habe ich Zeit gespart, indem ich beim Implementieren der Funktionen
+ bereits wusste, was diesen tun sollen und sehr wenig unnötige Funktionlität
+ hinzukam.
+\end_layout
+
+\begin_layout Subsection
+C Programmierung
+\end_layout
+
+\begin_layout Standard
+Da ich zusammen mit einem Kommilitonen bereits in einem früheren Semester
+ eine Implementation von MapReduce
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://en.wikipedia.org/wiki/MapReduce
+\end_layout
+
+\end_inset
+
+ in Java implementiert habe, war für mich Concurrency an sich nichts neues.
+ In diesem Projekt kamen jedoch die Finessen von C hinzu und es hat sich
+ herausgestellt, dass dies weit mehr ist als das 'der Programmierer ist
+ für die Speicherverwaltung verantwortlich'.
+ So habe ich zu Beginn einige Male Speicher auf dem Stack alloziert und
+ das hat im Unit - Test auch so funktioniert.
+ Erst als dann die Funktion in einem komplexeren Szenario verwendet wurde,
+ war die Speicheradresse plötzlich ungültig.
+ Zudem musste ich auf dem harten Weg erfahren, dass der Speicher, der via
+ malloc alloziert wird, nicht zwingend mit Nullen gefüllt ist.
+ Auch hier hat eine Funktion im Unit - Test funktioniert, da der Speicher
+ angeblich initial tatsächlich überall Nullen hat, aber in einem komplexeren
+ Szenario hatte die malloc Funktion nicht mehr frisch allozierten Speicher
+ gelifert, sondern jenen, der zuvor vom gleichen Prozess freigegeben wurde.
+ Wie ich dann erfahren habe, ist gerade in diesen Fällen der Speicher nicht
+ mit Nullen gefüllt.
+ Diesen Bug konnte ich schlussendlich mit folgendem Code auch in einem Unit-Test
+ nachstellen.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+int *dummy = malloc(1024 * sizeof(int));
+\end_layout
+
+\begin_layout Plain Layout
+
+for (int i = 0; i < 1024; i++)
+\end_layout
+
+\begin_layout Plain Layout
+
+   dummy[i] = 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+free(dummy);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+// eigentlicher Testcode
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Testsetup für Bug, der nur auftritt, wenn malloc keine Nullen zurückgibt
+ (test/stomp-test.c test_create_command_strcatbug)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
 Fazit
+\end_layout
+
+\begin_layout Standard
+Dieses Seminar hat mich weit mehr Zeit gekostet als vorgesehen.
+ Einerseits war das absehbar dadurch, dass ich die Aufgabestellung selbstdefinie
+rt und umfangreicher als die vorgegbenen war.
+ Andererseits habe ich jedoch auch vor allem Anfang viele Fehler programmiert,
+ weil ich in C nicht so fit bin.
+ Mit der Zeit hat sich dies jedoch gebessert und ich wurde immer produktiver
+ und mein Code wurde - auch durch die konsequentere Umsetzung von TDD -
+ immer robuster.
+\end_layout
+
+\begin_layout Standard
+Alles in Allem hat es mir Spass gemacht diese Arbeit zu schreiben und ich
+ bin mit meinem Message Broker zufrieden.
 \end_layout
 
 \begin_layout Section
@@ -2047,7 +2204,7 @@ Begriffe
 
 \begin_layout Standard
 \begin_inset Tabular
-<lyxtabular version="3" rows="5" columns="2">
+<lyxtabular version="3" rows="6" columns="2">
 <features rotate="0" tabularvalignment="middle">
 <column alignment="left" valignment="top" width="0pt">
 <column alignment="left" valignment="top" width="70col%">
@@ -2134,7 +2291,7 @@ Ein Client, der an Nachrichten von einem Topic interessiert ist
 </cell>
 </row>
 <row>
-<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -2143,11 +2300,31 @@ STOMP
 
 \end_inset
 </cell>
-<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
 Simple Text Oriented Messaging Protocol
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+TDD
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Test Driven Development / testgetriebene Entwicklung
 \end_layout
 
 \end_inset
