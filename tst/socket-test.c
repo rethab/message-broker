@@ -121,9 +121,7 @@ void test_read_command_too_much() {
     struct client client;
     struct stomp_command cmd;
     char rawcmd[1025];
-    for (int i = 0; i < 1024; i++) {
-        rawcmd[i] = 'a';
-    }
+    memset(rawcmd, 'a', 1024);
     rawcmd[1024] = '\0';
 
     assert(pipe(fds) == 0);
