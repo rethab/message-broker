@@ -1828,6 +1828,93 @@ Testabdeckung
 
 \end_layout
 
+\begin_layout Subsubsection
+Beispiel Testcase
+\end_layout
+
+\begin_layout Standard
+Dass in unixoiden System nahezu alles ein Filedesktiptor ist, hat sich beim
+ Testen als sehr hilfreich herausgestellt.
+ So konnte ich Funktionen, die normalerweise Daten über einen Socket versenden,
+ mittels Pipes testen.
+ Pipes haben jedoch nur ein Lese- und ein Schreibende, weshalb ich für gewisse
+ Tests UNIX Domain Sockets verwendet habe.
+ Mit letzteren kann man nämlich an beiden Enden schreiben und lesen.
+\end_layout
+
+\begin_layout Standard
+Folgendes Beispiel zeigt den Test, zuerst zu viele Zeichen in die Pipe schreibt
+ und dann erwartet, dass die Funktion socket_read_command den Fehler SOCKET_TOO_
+MUCH zurückgibt.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+char rawcmd[1025];
+\end_layout
+
+\begin_layout Plain Layout
+
+memset(rawcmd, 'a', 1024);
+\end_layout
+
+\begin_layout Plain Layout
+
+rawcmd[1024] = '
+\backslash
+0';
+\end_layout
+
+\begin_layout Plain Layout
+
+pipe(fds);
+\end_layout
+
+\begin_layout Plain Layout
+
+client.sockfd = fds[0];
+\end_layout
+
+\begin_layout Plain Layout
+
+write(fds[1], rawcmd, 1025);
+\end_layout
+
+\begin_layout Plain Layout
+
+ret = socket_read_command(&client, &cmd);
+\end_layout
+
+\begin_layout Plain Layout
+
+CU_ASSERT_EQUAL_FATAL(SOCKET_TOO_MUCH, ret);
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Testcase mit Pipe
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 Verwendung
 \end_layout
@@ -2159,7 +2246,6 @@ free(dummy);
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Testsetup für Bug, der nur auftritt, wenn malloc keine Nullen zurückgibt
  (test/stomp-test.c test_create_command_strcatbug)
 \end_layout
