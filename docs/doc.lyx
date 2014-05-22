@@ -114,10 +114,11 @@ Einleitung
 \end_layout
 
 \begin_layout Standard
-Ein Message Broker ist eine zentrale Kommunikatinsschnittstelle für mehrere
- Programme die in verschiedenen Programmiersprachen implementiert sein können.
+Ein Message Broker ist eine zentrale Kommunikationsschnittstelle für mehrere
+ Programme, die in verschiedenen Programmiersprachen implementiert sein
+ können.
  Nebst der Möglichkeit heterogene Systeme zu verbinden, kann jedoch durch
- einen Message Broker auch eine verteilte Architektur realisiert werden
+ einen Message Broker auch eine verteilte Architektur realisiert werden,
  indem jeder Client einen Teil der Funktionalität übernimmt.
 \end_layout
 
@@ -131,10 +132,20 @@ Ein Message Broker ist eine zentrale Kommunikatinsschnittstelle für mehrere
 \begin_layout Standard
 Damit verschiedenste Programme miteinander kommunizieren können, bieten
  Message Broker typischerweise Schnittestellen mit verschiedenen Protokollen.
- Eines davon ist STOMP, welches sehr einfach gehalten und spezifisch für
- dynamische Programmiersprachen entwickelt wurde.Im Rahmen dieses Seminars
- habe ich mich deshalb für die Implementation von einem Message Broker entschied
-en.
+ Eines davon ist STOMP
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://stomp.github.io/
+\end_layout
+
+\end_inset
+
+, welches sehr einfach gehalten und spezifisch für dynamische Programmiersprache
+n entwickelt wurde.
+ Im Rahmen dieses Seminars habe ich mich deshalb für die Implementation
+ von einem Message Broker entschieden.
  Da das Kernthema Concurrency ist und ich nicht zu viel Zeit mit dem Protokoll
  verschwenden wollte, habe ich eine abgespeckte Version von STOMP als Protokoll
  implementiert.
@@ -155,8 +166,8 @@ t wurde, die verschiedenen Komponenten, die im Message Broker existieren,
  Im Kapitel 4 finden sich einige Details zur Implementation (insbesondere
  Locking) gefolgt vom Kapitel 5, welches die Verwendung vom Message Broker
  erklärt.
- Abgeschlossen wird die Dokumentation mit dem Kapitel 6 und einem persönlichen
- Rückblick.
+ Abgeschlossen wird die Dokumentation mit einem persönlichen Rückblick im
+ Kapitel 6.
 \end_layout
 
 \begin_layout Section
@@ -208,34 +219,29 @@ Protokoll
 \end_layout
 
 \begin_layout Standard
-Für die Umsetzung wurde eine abgespeckte Version vom STOMP
-\begin_inset Foot
-status open
-
-\begin_layout Plain Layout
-https://stomp.github.io/
-\end_layout
-
-\end_inset
-
- Protokoll implementiert.
- Die implementierten Kommandos werden unter aufgelistet.
+Für die Umsetzung wurde eine abgespeckte Version vom STOMP Protokoll implementie
+rt.
+ Die implementierten Kommandos werden in den folgenden Kapiteln aufgelistet.
  Auf sämtliche Kommandos vom Client kann der Server mit ERROR antworten,
  falls etwas schief gelaufen ist.
  Jedes Kommando hat die folgende Struktur:
 \end_layout
 
 \begin_layout Standard
-Auf der ersten Zeile steht der Name des Kommandos in Grossbuchstaben.
- Auf folgenden Zeilen stehen durch Doppelpunkt separierte Key-Value Paare,
- welche Header Werte darstellen.
- Nach den Header Werten folgt der Content, welcher durch eine Leerzeile
- vom Header getrennt ist.
- Das Ende eines Kommandos markiert wiederum eine Leerzeile gefolgt vom Null-Byte
- (hier ^@):
-\end_layout
+\begin_inset Box ovalbox
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
 
-\begin_layout Standard
+\begin_layout Plain Layout
 \begin_inset listings
 inline false
 status open
@@ -292,6 +298,28 @@ Struktur eines Kommandos
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Auf der ersten Zeile steht der Name des Kommandos in Grossbuchstaben.
+ Auf folgenden Zeilen stehen durch Doppelpunkt separierte Key-Value Paare,
+ welche Header Werte darstellen.
+ Nach den Header Werten folgt der Content, welcher durch eine Leerzeile
+ vom Header getrennt ist.
+ Das Ende eines Kommandos markiert wiederum eine Leerzeile gefolgt vom Null-Byte
+ (hier ^@):
+\end_layout
+
 \begin_layout Subsubsection
 CONNECT
 \end_layout
@@ -321,8 +349,8 @@ ERROR
 \begin_layout Standard
 Wird vom Message Broker in verschiedenen Szenarien an den Client gesendet
  um einen Fehler mitzuteilen.
- Hat einen zwingenden Header 'message', der die Fehlermeldung enthält und
- keinen Content.
+ Hat einen zwingenden Header 'message', der die Fehlermeldung enthält.
+ Hat keinen Content.
 \end_layout
 
 \begin_layout Subsubsection
@@ -384,7 +412,7 @@ Speicherstruktur
 \begin_layout Standard
 Auf dem Server existieren zwei globale Listen: Die eine enthält alle Topics
  verknüpft mit einer Liste von Subscribern zum jeweiligen Topic.
- Die zweite Liste enthält alle Messages, die vom Message Broker empfangen
+ Die zweite Liste enthält alle Nachrichten, die vom Message Broker empfangen
  wurden.
  Zudem enthält jede Nachricht eine Liste von Statistiken.
  Eine Statstik ist eine Tripel aus Subscriber, Anzahl versuchter Zustellungen
@@ -394,6 +422,20 @@ Auf dem Server existieren zwei globale Listen: Die eine enthält alle Topics
 \end_layout
 
 \begin_layout Standard
+\begin_inset Box ovalbox
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
 \begin_inset listings
 inline false
 status open
@@ -474,7 +516,7 @@ Messages:
 
 \begin_layout Plain Layout
 
-          - last fail
+          - last_fail
 \end_layout
 
 \begin_layout Plain Layout
@@ -494,7 +536,7 @@ Messages:
 
 \begin_layout Plain Layout
 
-          - last fail
+          - last_fail
 \end_layout
 
 \begin_layout Plain Layout
@@ -531,6 +573,11 @@ Speicherstruktur
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsubsection
 Einfügen einer neuen Nachricht
 \end_layout
@@ -545,6 +592,44 @@ Wenn ein Client eine Nachricht an den Message Broker sendet, kopiert er
 
 \begin_layout Subsection
 Komponenten
+\end_layout
+
+\begin_layout Subsubsection
+Übersicht
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename components.png
+	width 50page%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Übersicht der Komponenten
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsubsection
@@ -565,7 +650,7 @@ Pro verbundenem Client existiert ein Thread, der den Broker repräsentiert.
  Der Broker hält eine TCP Verbindung aufrecht und ist stets bereit, Kommandos
  zu lesen.
  Der Broker fügt den Client zur Liste der Subscriber, wenn er sich für einen
- Topic interessiert und nimmt eine Nachricht entgegen, wenn er eine sendet,
+ Topic interessiert, nimmt eine Nachricht entgegen, wenn er eine sendet
  und reiht diese in die Liste der Nachrichten.
 \end_layout
 
@@ -574,11 +659,11 @@ Distributor
 \end_layout
 
 \begin_layout Standard
-Der Distributor prüft ständig die Liste von Messages nach Nachrichten, die
- zugestellt werden sollen.
+Der Distributor prüft ständig die Liste von Nachrichten nach denjenigen,
+ die zugestellt werden sollen.
  Jedes Mal, wenn eine Nachricht erfolgreich zugestellt wurde, wird den Zähler
  'nattempts' um eins erhöht.
- Falls die Zustellung fehlschlägt, wird der Timestamp 'last fail' gesetzt.
+ Falls die Zustellung fehlschlägt, wird der Timestamp 'last_fail' gesetzt.
  Mit diesem Timestamp kann der Distributor auch feststellen, ob er bereits
  einen erneuten Versuch zur unternehmen soll.
 \end_layout
@@ -594,19 +679,9 @@ Der Garbage Collector räumt Statistiken, Nachrichten und Subscriber auf.
  Nachricht wurde erfolgreich zugestellt oder Subscriber hat die Verbindung
  beendet).
  Sobald eine Nachricht keine Statistiken mehr hat, kann die gesamte Nachricht
- abgeräumt werden und aus der Liste der Messages gelöscht werden.
+ abgeräumt werden und aus der Liste der Nachrichten gelöscht werden.
  Wenn ein Subscriber in keiner der Liste der Statistiken mehr auftaucht,
  kann auch er gelöscht werden.
-\end_layout
-
-\begin_layout Standard
-\begin_inset Graphics
-	filename components.png
-	width 50page%
-
-\end_inset
-
-
 \end_layout
 
 \begin_layout Section
@@ -621,10 +696,11 @@ Locking
 Damit das Programm auch mit mehreren interagierenden Threads stets in einem
  konsistenten Zustand bleibt, wurden die beiden globalen Listen mit Locks
  geschützt.
- Die folgenden Tabellen zeigt links die Resourcen, die geschützt werden
- müssen und in den Spalten 2-n die Aktionen, die diese Resourcen verändern.
+ Die folgenden Tabellen zeigen pro Komponente links die Resourcen, die geschützt
+ werden müssen und in den Spalten 2-n die Aktionen, die diese Resourcen
+ verändern.
  Mit R, W und M wird dann angedeutet, welcher Lock für eine bestimmte Aktion
- gehaltet werden muss.
+ gehalten werden muss.
 \end_layout
 
 \begin_layout Itemize
@@ -968,6 +1044,19 @@ Garbage Collector
 \end_layout
 
 \begin_layout Standard
+Der Garbage Collector löscht Statistiken und Nachrichten nicht direkt, sondern
+ sammelt zu löschende Elemente in einem ersten Schritt in einer Liste und
+ löscht in sie in einem zweiten Durchlauf.
+ Dadurch spart er sich einen Write Lock - welcher exklusiv ist - wenn es
+ nichts zu löschen gibt.
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
 \begin_inset Tabular
 <lyxtabular version="3" rows="7" columns="8">
 <features rotate="0" tabularvalignment="middle">
@@ -1549,6 +1638,18 @@ Distributor
 \end_layout
 
 \begin_layout Standard
+Ähnlich wie der Garbage Collector sammelt der Distributor Nachrichten in
+ einer Liste, welche zugestellt werden können.
+ In einem zweiten Schritt werden diese zugestellt und die zugehörige Statistik
+ wird aktualisiert.
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
 \begin_inset Tabular
 <lyxtabular version="3" rows="4" columns="3">
 <features rotate="0" tabularvalignment="middle">
@@ -1720,11 +1821,12 @@ Dateien
 
 \begin_layout Standard
 Sämtlicher Produktivcode ist im Verzeichnis src.
- Es folgt eine Auflistung der Dateien und kurze Beschreibung von deren Inhalt.
+ Es folgt eine Auflistung der Dateien und eine kurze Beschreibung von deren
+ Inhalt.
 \end_layout
 
 \begin_layout Itemize
-server.c: Beinhaltet main-Funktion vom Message Broker.
+server.c: Beinhaltet die main-Funktion vom Message Broker.
  Hier werden alle Komponenten gestartet und es wird auf neue Clients gewartet.
 \end_layout
 
@@ -1747,14 +1849,14 @@ gc.c/gc.h: Funktionalität vom Garbage Collector.
 \end_layout
 
 \begin_layout Itemize
-list.c/list.h: Eine Implementation einer verketteten Liste und einiger Operationen.
+list.c/list.h: Eine Implementation einer verketteten Liste und einigen Operationen.
  Diese Liste wird überall verwendet (z.B.
  Liste von Topics).
 \end_layout
 
 \begin_layout Itemize
 socket.c/socket.h: Ein High-Level Interface für Sockets.
- Im Gegensatz zu herkömmlichen Funktionen, die mit Byte-Array Buffer über
+ Im Gegensatz zu herkömmlichen Funktionen, die mit Byte-Array Buffern über
  einen Socket Daten versenden, kann mit diesen Funktionen komfortabel ein
  ganzes STOMP - Kommando über den Socket versendet bzw.
  empfangen werden.
@@ -1768,7 +1870,7 @@ stomp.c/stomp.h: Beinhaltet Funktionen zum Parsen von Char - Arrays in ein
 
 \begin_layout Itemize
 topic.c/topic.h: Beinhaltet die zentralen Strukturen und Funktionen zum operieren
- mit den beiden zentralen Listen von Messages und Topics.
+ mit den beiden zentralen Listen von Nachrichten und Topics.
  So gibt es zum Beispiel eine Funktion um einen Subscriber einem Topic hinzuzufü
 gen.
 \end_layout
@@ -1795,6 +1897,20 @@ http://www.cunit.sourceforge.net
 \end_layout
 
 \begin_layout Standard
+\begin_inset Box ovalbox
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
 \begin_inset listings
 inline false
 status open
@@ -1828,6 +1944,11 @@ Testabdeckung
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsubsection
 Beispiel Testcase
 \end_layout
@@ -1843,13 +1964,27 @@ Dass in unixoiden System nahezu alles ein Filedesktiptor ist, hat sich beim
 \end_layout
 
 \begin_layout Standard
-Folgendes Beispiel zeigt den Test, zuerst zu viele Zeichen in die Pipe schreibt
- und dann erwartet, dass die Funktion socket_read_command den Fehler SOCKET_TOO_
-MUCH zurückgibt.
+Folgendes Beispiel zeigt den Test, der zuerst zu viele Zeichen in die Pipe
+ schreibt und dann erwartet, dass die Funktion socket_read_command den Fehler
+ SOCKET_TOO_MUCH zurückgibt.
  
 \end_layout
 
 \begin_layout Standard
+\begin_inset Box ovalbox
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
 \begin_inset listings
 inline false
 status open
@@ -1901,8 +2036,12 @@ CU_ASSERT_EQUAL_FATAL(SOCKET_TOO_MUCH, ret);
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Testcase mit Pipe
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
@@ -1943,6 +2082,20 @@ Um den Code für die Tests zu kompilieren muss folgender Befehl ausgeführt
 \end_layout
 
 \begin_layout Standard
+\begin_inset Box ovalbox
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
 \begin_inset listings
 inline false
 status open
@@ -1966,11 +2119,38 @@ Tests kompilieren und ausführen
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
 \begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
 Der Produktivecode wird mit folgendem Befehl erzeugt.
 \end_layout
 
 \begin_layout Standard
+\begin_inset Box ovalbox
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
 \begin_inset listings
 inline false
 status open
@@ -1994,7 +2174,20 @@ Produktivecode kompilieren
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
 \begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
 Dies erstellt die beiden Binaries run und test im Hauptverzeichnis.
 \end_layout
 
@@ -2009,6 +2202,20 @@ Mit folgendem Befehl kann der Message Broker auf dem Standard Port gestartet
 \end_layout
 
 \begin_layout Standard
+\begin_inset Box ovalbox
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
 \begin_inset listings
 inline false
 status open
@@ -2032,12 +2239,39 @@ Message Broker auf Standard Port
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
 \begin_layout Standard
 Falls ein anderer Port verwendet werden soll, kann dieser als Argument mitgegebe
 n werden.
 \end_layout
 
 \begin_layout Standard
+
+\begin_inset Box ovalbox
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
 \begin_inset listings
 inline false
 status open
@@ -2061,6 +2295,11 @@ Message Broker mit bestimmten Port
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsection
 Testclient starten
 \end_layout
@@ -2071,6 +2310,20 @@ Auch der Testclient kann ohne Argumente aufgerufen werden und wird sich
 \end_layout
 
 \begin_layout Standard
+\begin_inset Box ovalbox
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
 \begin_inset listings
 inline false
 status open
@@ -2094,10 +2347,21 @@ Testclient mit Standard Argumenten
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
 \begin_layout Standard
 Zusätzlich bietet der Testclient einige Argumente um das Verhalten zu Steuern.
- Wichtig ist, dass alle Argumente in dieser Reihenfolge angegeben werden
- müssen.
+ Wichtig ist, dass alle Argumente in dieser Reihenfolge angegeben werden.
 \end_layout
 
 \begin_layout Itemize
@@ -2117,6 +2381,21 @@ nmsgs: Die Anzahl Nachrichten, die an den Broker versendet werden sollen.
 \end_layout
 
 \begin_layout Standard
+
+\begin_inset Box ovalbox
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
 \begin_inset listings
 inline false
 status open
@@ -2144,6 +2423,11 @@ Testclient mit bestimmten Argumenten
 
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 Rückblick
 \end_layout
@@ -2155,7 +2439,7 @@ Test Driven Development
 \begin_layout Standard
 Ich wollte dieses Projekt verwenden, um die testgetriebene Entwicklung auszuprob
 ieren.
- Deshalb habe ich schon von beginn an immer zuerst Unit - Tests geschrieben.
+ Deshalb habe ich schon von beginn an immer zuerst Unit Tests geschrieben.
  Zugegebenermassen habe ich jedoch bei den ersten Funktionen (vor allem
  stomp.c) zuerst die Header-Datei geschrieben und dann dagegen getestet.
  Als ich bei späteren Dateien (z.B.
@@ -2163,7 +2447,7 @@ ieren.
  konnte, habe ich gemerkt, wie sich auch die Signatur der Methoden verbessert
  hat.
  So habe ich Zeit gespart, indem ich beim Implementieren der Funktionen
- bereits wusste, was diesen tun sollen und sehr wenig unnötige Funktionlität
+ bereits wusste, was diese tun sollen und sehr wenig unnötige Funktionlität
  hinzukam.
 \end_layout
 
@@ -2183,27 +2467,41 @@ http://en.wikipedia.org/wiki/MapReduce
 
 \end_inset
 
- in Java implementiert habe, war für mich Concurrency an sich nichts neues.
+ in Java implementiert habe, war für mich Concurrency an sich nichts Neues.
  In diesem Projekt kamen jedoch die Finessen von C hinzu und es hat sich
  herausgestellt, dass dies weit mehr ist als das 'der Programmierer ist
  für die Speicherverwaltung verantwortlich'.
  So habe ich zu Beginn einige Male Speicher auf dem Stack alloziert und
- das hat im Unit - Test auch so funktioniert.
+ das hat im Unit Test auch so funktioniert.
  Erst als dann die Funktion in einem komplexeren Szenario verwendet wurde,
  war die Speicheradresse plötzlich ungültig.
  Zudem musste ich auf dem harten Weg erfahren, dass der Speicher, der via
  malloc alloziert wird, nicht zwingend mit Nullen gefüllt ist.
- Auch hier hat eine Funktion im Unit - Test funktioniert, da der Speicher
+ Auch hier hat eine Funktion im Unit Test funktioniert, da der Speicher
  angeblich initial tatsächlich überall Nullen hat, aber in einem komplexeren
  Szenario hatte die malloc Funktion nicht mehr frisch allozierten Speicher
  gelifert, sondern jenen, der zuvor vom gleichen Prozess freigegeben wurde.
  Wie ich dann erfahren habe, ist gerade in diesen Fällen der Speicher nicht
  mit Nullen gefüllt.
- Diesen Bug konnte ich schlussendlich mit folgendem Code auch in einem Unit-Test
- nachstellen.
+ Diesen Bug konnte ich schlussendlich mit folgendem Code auch in einem Unit
+ Test nachstellen.
 \end_layout
 
 \begin_layout Standard
+\begin_inset Box ovalbox
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
 \begin_inset listings
 inline false
 status open
@@ -2248,6 +2546,11 @@ free(dummy);
 \begin_layout Plain Layout
 Testsetup für Bug, der nur auftritt, wenn malloc keine Nullen zurückgibt
  (test/stomp-test.c test_create_command_strcatbug)
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
