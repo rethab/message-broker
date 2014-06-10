@@ -5,7 +5,7 @@
 \textclass article
 \use_default_options true
 \maintain_unincluded_children false
-\language english
+\language german-ch
 \language_package default
 \inputencoding auto
 \fontencoding global
@@ -25,6 +25,7 @@
 \bibtex_command default
 \index_command default
 \paperfontsize default
+\spacing single
 \use_hyperref false
 \papersize default
 \use_geometry false
@@ -55,7 +56,7 @@
 \tocdepth 3
 \paragraph_separation indent
 \paragraph_indentation default
-\quotes_language english
+\quotes_language danish
 \papercolumns 1
 \papersides 1
 \paperpagestyle default
@@ -131,7 +132,7 @@ Ein Message Broker ist eine zentrale Kommunikationsschnittstelle für mehrere
 
 \begin_layout Standard
 Damit verschiedenste Programme miteinander kommunizieren können, bieten
- Message Broker typischerweise Schnittestellen mit verschiedenen Protokollen.
+ Message Broker typischerweise Schnittstellen mit verschiedenen Protokollen.
  Eines davon ist STOMP
 \begin_inset Foot
 status open
@@ -415,7 +416,7 @@ Auf dem Server existieren zwei globale Listen: Die eine enthält alle Topics
  Die zweite Liste enthält alle Nachrichten, die vom Message Broker empfangen
  wurden.
  Zudem enthält jede Nachricht eine Liste von Statistiken.
- Eine Statstik ist eine Tripel aus Subscriber, Anzahl versuchter Zustellungen
+ Eine Statistik ist eine Tripel aus Subscriber, Anzahl versuchter Zustellungen
  und einen Timestamp der letzten erfolglosen Zustellung.
  Diese wird verwendet um zu bestimmen, welche Subscriber die Nachricht erhalten
  haben und ob ein erneuter Versuch der Zustellung gemacht werden soll.
@@ -689,14 +690,27 @@ Implementation
 \end_layout
 
 \begin_layout Subsection
-Locking
+Lock Implementation vs.
+ Globaler Lock
 \end_layout
 
 \begin_layout Standard
-Damit das Programm auch mit mehreren interagierenden Threads stets in einem
- konsistenten Zustand bleibt, wurden die beiden globalen Listen mit Locks
- geschützt.
- Die folgenden Tabellen zeigen pro Komponente links die Resourcen, die geschützt
+Nach Aufgabenstellung ist es verboten, einen globalen Lock zu verwenden.
+ Aus diesem Grund haben ich mich entschieden, die einzelnen Listen und deren
+ Einträge mit verschiedenen Read- bzw.
+ Write Locks zu schützen.
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+Die folgenden Tabellen zeigen pro Komponente links die Resourcen, die geschützt
  werden müssen und in den Spalten 2-n die Aktionen, die diese Resourcen
  verändern.
  Mit R, W und M wird dann angedeutet, welcher Lock für eine bestimmte Aktion
@@ -1954,7 +1968,7 @@ Beispiel Testcase
 \end_layout
 
 \begin_layout Standard
-Dass in unixoiden System nahezu alles ein Filedesktiptor ist, hat sich beim
+Dass in unixoiden System nahezu alles ein Filedeskriptor ist, hat sich beim
  Testen als sehr hilfreich herausgestellt.
  So konnte ich Funktionen, die normalerweise Daten über einen Socket versenden,
  mittels Pipes testen.
@@ -2133,7 +2147,7 @@ Tests kompilieren und ausführen
 
 \begin_layout Standard
 \noindent
-Der Produktivecode wird mit folgendem Befehl erzeugt.
+Der Produktivcode wird mit folgendem Befehl erzeugt.
 \end_layout
 
 \begin_layout Standard
@@ -2257,7 +2271,6 @@ n werden.
 \end_layout
 
 \begin_layout Standard
-
 \begin_inset Box ovalbox
 position "t"
 hor_pos "c"
@@ -2381,7 +2394,6 @@ nmsgs: Die Anzahl Nachrichten, die an den Broker versendet werden sollen.
 \end_layout
 
 \begin_layout Standard
-
 \begin_inset Box ovalbox
 position "t"
 hor_pos "c"
@@ -2447,7 +2459,7 @@ ieren.
  konnte, habe ich gemerkt, wie sich auch die Signatur der Methoden verbessert
  hat.
  So habe ich Zeit gespart, indem ich beim Implementieren der Funktionen
- bereits wusste, was diese tun sollen und sehr wenig unnötige Funktionlität
+ bereits wusste, was diese tun sollen und sehr wenig unnötige Funktionalität
  hinzukam.
 \end_layout
 
@@ -2480,7 +2492,7 @@ http://en.wikipedia.org/wiki/MapReduce
  Auch hier hat eine Funktion im Unit Test funktioniert, da der Speicher
  angeblich initial tatsächlich überall Nullen hat, aber in einem komplexeren
  Szenario hatte die malloc Funktion nicht mehr frisch allozierten Speicher
- gelifert, sondern jenen, der zuvor vom gleichen Prozess freigegeben wurde.
+ geliefert, sondern jenen, der zuvor vom gleichen Prozess freigegeben wurde.
  Wie ich dann erfahren habe, ist gerade in diesen Fällen der Speicher nicht
  mit Nullen gefüllt.
  Diesen Bug konnte ich schlussendlich mit folgendem Code auch in einem Unit
@@ -2569,8 +2581,8 @@ Fazit
 
 \begin_layout Standard
 Dieses Seminar hat mich weit mehr Zeit gekostet als vorgesehen.
- Einerseits war das absehbar dadurch, dass ich die Aufgabestellung selbstdefinie
-rt und umfangreicher als die vorgegbenen war.
+ Einerseits war das absehbar dadurch, dass ich die Aufgabestellung selbst
+ definiert und umfangreicher als die vorgegebenen war.
  Andererseits habe ich jedoch auch vor allem Anfang viele Fehler programmiert,
  weil ich in C nicht so fit bin.
  Mit der Zeit hat sich dies jedoch gebessert und ich wurde immer produktiver
