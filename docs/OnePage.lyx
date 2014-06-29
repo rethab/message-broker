@@ -1,0 +1,305 @@
+#LyX 2.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article
+\begin_preamble
+\usepackage[%
+%	colorlinks=false,%
+pagebackref%
+]{hyperref}
+
+\date{}
+\end_preamble
+\use_default_options false
+\maintain_unincluded_children false
+\language german-ch
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman times
+\font_sans helvet
+\font_typewriter courier
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 0
+\use_package esint 0
+\use_package mathdots 0
+\use_package mathtools 0
+\use_package mhchem 0
+\use_package stackrel 0
+\use_package stmaryrd 0
+\use_package undertilde 0
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 1.5in
+\topmargin 1.5in
+\rightmargin 1.5in
+\bottommargin 1.5in
+\secnumdepth 2
+\tocdepth 2
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language danish
+\papercolumns 1
+\papersides 1
+\paperpagestyle headings
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+\noindent
+
+\series bold
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+vspace{-1.90in}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\series default
+Message Broker
+\series bold
+
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+vspace{-.85in}
+\end_layout
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+
+\series bold
+Reto Hablützel
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+vspace{-.25in}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+Zürcher Hochschule für Angewandte Wissenschaften, Studiengang Informatik
+ (29.
+ Juni 2014)
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+Ein Message Broker ist eine zentrale Kommunikationsschnittstelle für mehrere
+ Programme, die in verschiedenen Programmiersprachen implementiert sein
+ können.
+ Nebst der Möglichkeit heterogene Systeme zu verbinden, kann jedoch durch
+ einen Message Broker auch eine verteilte Architektur realisiert werden,
+ indem jeder Client einen Teil der Funktionalität übernimmt.
+ Damit verschiedenste Programme miteinander kommunizieren können, bieten
+ Message Broker typischerweise Schnittstellen mit verschiedenen Protokollen.
+ Eines davon ist STOMP, welches sehr einfach gehalten und spezifisch für
+ dynamische Programmiersprachen entwickelt wurde.
+ Im Rahmen dieses Seminars habe ich mich deshalb für die Implementation
+ von einem Message Broker entschieden.
+ Da das Kernthema Concurrency ist und ich nicht zu viel Zeit mit dem Protokoll
+ verschwenden wollte, habe ich eine abgespeckte Version von STOMP als Protokoll
+ implementiert.
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename components.png
+	width 60text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Komponentenübersicht"
+
+\end_inset
+
+Komponentenübersicht
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+Abbildung 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Komponentenübersicht"
+
+\end_inset
+
+ zeigt eine Übersicht der Komponenten, die Teil vom Message Broker sind.
+ Als zentrale Speicherstruktur wurde eine Liste von Topics sowie eine Liste
+ von Messages verwendet.
+ Diese sind jeweils als verkettete Liste implementiert.
+ Zu jedem Topic ist eine Liste von sogenannten Subscribern assoziiert, welche
+ die Nachrichten erhalten.
+ Jede Nachricht hält sich eine Liste von Statistiken zu jedem Zustellungsversuch
+, der an einen Subscriber unternommen wurde.
+ Aufgrund dessen kann der Garbage Collector entscheiden, ob eine Nachricht
+ abgeräumt werden kann und der Distributor, welcher die Nachrichten zustellt,
+ ob eine Zustellung erneut versucht werden soll.
+ Für die Locks auf den Listen wurde ein Read/Write Lock verwendet.
+ Als Beispiel wird folgend der Ablauf vom Garbage Collector aufgezeigt.
+ Die restlichen Komponenten interagieren mit den Listen nach dem gleichen
+ Konzept.
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace defskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+Der Garbage Collector holt sich einen Read Lock auf die Liste der Zustellungssta
+tistiken.
+ Wenn er sieht, dass für eine Nachricht an einen Subscriber kein erneuter
+ Zustellungsversuch unternommen werden wird (z.B.
+ weil die Nachricht bereits erfolgreich zugestellt wurde), merkt er sich
+ dieses Element in einer Liste.
+ Nachdem er die ganze Liste von Elementen gesammelt hat, werden diese in
+ einem zweiten Schritt von der Liste entfernt.
+ Für das Entfernen ist ein Write Lock notwendig.
+ Als nächstes wird nach dem gleichen Verfahren die Liste der Messages durchsucht
+ und dann aufgeräumt.
+ Diese Aktionen werden jeweils in eine Sammel- und Aufräumphase unterteilt,
+ weil so die Liste in einem ersten Schritt nur mit einem Read Lock geschützt
+ werden muss, wodurch die anderen Komponenten nicht vom Zugriff abgehalten
+ werden.
+ Falls im ersten Schritt nichts zum Aufräumen gefunden wird, muss die Liste
+ nie mit einem Write Lock geschützt werden und bleibt somit für die Anderen
+ zugreifbar.
+\end_layout
+
+\end_body
+\end_document
