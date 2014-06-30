@@ -282,7 +282,7 @@ reference "fig:Komponentenübersicht"
 \begin_layout Standard
 \noindent
 Der Garbage Collector holt sich einen Read Lock auf die Liste der Zustellungssta
-tistiken.
+tistiken und Messages.
  Wenn er sieht, dass für eine Nachricht an einen Subscriber kein erneuter
  Zustellungsversuch unternommen werden wird (z.B.
  weil die Nachricht bereits erfolgreich zugestellt wurde), merkt er sich
